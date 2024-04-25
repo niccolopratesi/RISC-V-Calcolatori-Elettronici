@@ -9,13 +9,13 @@
 
 // descrittore di processo
 struct des_proc {
-	uint16 id;
-	uint16 livello;
-	uint32 precedenza;
-	uint64 punt_nucleo;
-	uint64 contesto[N_REG];
-	uint64 epc;
-	uint64 satp;    // User page table
+	natw id;
+	natw livello;
+	natl precedenza;
+	natq punt_nucleo;
+	natq contesto[N_REG];
+	natq epc;
+	natq satp;    // User page table
 	// paddr cr3; TODO: Insert pagination info
     struct trapframe* trapframe;
 
@@ -29,7 +29,7 @@ extern "C" void s_trap();
 extern "C" void k_trap();
 extern "C" void writeSTVEC(void*);
 extern "C" void writeSEPC(void*);
-extern "C" uint64 readSEPC();
+extern "C" natq readSEPC();
 extern "C" int readSCAUSE();
 extern "C" int readSTVAL();
 extern "C" int readSTVEC();
@@ -129,7 +129,7 @@ extern "C" void sInterruptReturn(){
     // Prepariamo i valori di cui uservec avrà bisogno alla
     // prossima trap nel kernel
     esecuzione->trapframe->kernel_satp = readSATP();
-    esecuzione->trapframe->kernel_trap = (uint64)sInterruptHandler;
+    esecuzione->trapframe->kernel_trap = (natq)sInterruptHandler;
 
     //Indichiamo il livello utente come privilegio a cui tornare
     clearSPreviousPrivilege();
@@ -140,7 +140,7 @@ extern "C" void sInterruptReturn(){
     writeSEPC((void*)esecuzione->trapframe->epc);
 
     // Informiamo trampoline.s su quale tabella delle pagine utente usare
-    // uint64 user_page = writeSATP(esecuzione->satp);
+    // natq user_page = writeSATP(esecuzione->satp);
 
 }
 

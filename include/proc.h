@@ -2,22 +2,22 @@
 
 // Saved registers for kernel context switches.
 struct context {
-  uint64 ra;
-  uint64 sp;
+  natq ra;
+  natq sp;
 
   // callee-saved
-  uint64 s0;
-  uint64 s1;
-  uint64 s2;
-  uint64 s3;
-  uint64 s4;
-  uint64 s5;
-  uint64 s6;
-  uint64 s7;
-  uint64 s8;
-  uint64 s9;
-  uint64 s10;
-  uint64 s11;
+  natq s0;
+  natq s1;
+  natq s2;
+  natq s3;
+  natq s4;
+  natq s5;
+  natq s6;
+  natq s7;
+  natq s8;
+  natq s9;
+  natq s10;
+  natq s11;
 };
 
 // per-process data for the trap handling code in trampoline.S.
@@ -33,39 +33,39 @@ struct context {
 // return-to-user path via usertrapret() doesn't return through
 // the entire kernel call stack.
 struct trapframe {
-  /*   0 */ uint64 kernel_satp;   // kernel page table
-  /*   8 */ uint64 kernel_sp;     // top of process's kernel stack
-  /*  16 */ uint64 kernel_trap;   // usertrap()
-  /*  24 */ uint64 epc;           // saved user program counter
-  /*  40 */ uint64 ra;
-  /*  48 */ uint64 sp;
-  /*  56 */ uint64 gp;
-  /*  64 */ uint64 tp;
-  /*  72 */ uint64 t0;
-  /*  80 */ uint64 t1;
-  /*  88 */ uint64 t2;
-  /*  96 */ uint64 s0;
-  /* 104 */ uint64 s1;
-  /* 112 */ uint64 a0;
-  /* 120 */ uint64 a1;
-  /* 128 */ uint64 a2;
-  /* 136 */ uint64 a3;
-  /* 144 */ uint64 a4;
-  /* 152 */ uint64 a5;
-  /* 160 */ uint64 a6;
-  /* 168 */ uint64 a7;
-  /* 176 */ uint64 s2;
-  /* 184 */ uint64 s3;
-  /* 192 */ uint64 s4;
-  /* 200 */ uint64 s5;
-  /* 208 */ uint64 s6;
-  /* 216 */ uint64 s7;
-  /* 224 */ uint64 s8;
-  /* 232 */ uint64 s9;
-  /* 240 */ uint64 s10;
-  /* 248 */ uint64 s11;
-  /* 256 */ uint64 t3;
-  /* 264 */ uint64 t4;
-  /* 272 */ uint64 t5;
-  /* 280 */ uint64 t6;
+  /*   0 */ natq kernel_satp;   // kernel page table
+  /*   8 */ natq kernel_sp;     // top of process's kernel stack
+  /*  16 */ natq kernel_trap;   // usertrap()
+  /*  24 */ natq epc;           // saved user program counter
+  /*  40 */ natq ra;
+  /*  48 */ natq sp;
+  /*  56 */ natq gp;
+  /*  64 */ natq tp;
+  /*  72 */ natq t0;
+  /*  80 */ natq t1;
+  /*  88 */ natq t2;
+  /*  96 */ natq s0;
+  /* 104 */ natq s1;
+  /* 112 */ natq a0;
+  /* 120 */ natq a1;
+  /* 128 */ natq a2;
+  /* 136 */ natq a3;
+  /* 144 */ natq a4;
+  /* 152 */ natq a5;
+  /* 160 */ natq a6;
+  /* 168 */ natq a7;
+  /* 176 */ natq s2;
+  /* 184 */ natq s3;
+  /* 192 */ natq s4;
+  /* 200 */ natq s5;
+  /* 208 */ natq s6;
+  /* 216 */ natq s7;
+  /* 224 */ natq s8;
+  /* 232 */ natq s9;
+  /* 240 */ natq s10;
+  /* 248 */ natq s11;
+  /* 256 */ natq t3;
+  /* 264 */ natq t4;
+  /* 272 */ natq t5;
+  /* 280 */ natq t6;
 };

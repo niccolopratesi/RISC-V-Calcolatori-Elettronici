@@ -1,1 +1,4 @@
 objs/*
+kernel/kernel
+test/kernel_test
+user/user_test

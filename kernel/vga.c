@@ -34,8 +34,8 @@
 #define VGA_TEXT_WIDTH 80
 
 
-uint8 readport(uint32 port, uint8 index);
-void writeport(uint32 port, uint8 index, uint8 val);
+natb readport(natl port, natb index);
+void writeport(natl port, natb index, natb val);
 
 void init_textmode_80x25();
 void init_graphicmode_320x300();
@@ -48,24 +48,24 @@ void init_PD();
 void load_font(unsigned char* font_16);
 void load_palette();
 void post_font();
-void print_VGA(char *message, uint8 fg, uint8 bg);
+void print_VGA(char *message, natb fg, natb bg);
 
-volatile uint8 __attribute__((unused)) discard; // write to this to discard
+volatile natb __attribute__((unused)) discard; // write to this to discard
 char *vga_buf;
 
-static volatile uint8 *const VGA_BASE = (uint8 *)0x3000000L;
+static volatile natb *const VGA_BASE = (natb *)0x3000000L;
 
-static inline uint16 encode_char(char c, uint8 fg, uint8 bg) {
+static inline natw encode_char(char c, natb fg, natb bg) {
   return ((bg & 0xf) << 4 | (fg & 0xf)) << 8 | c;
 }
 
 
 static inline void memcpy(void *restrict dest, const void *restrict src,
-                          uint n) {
+                          natl n) {
   unsigned char *d = dest;
   const unsigned char *s = src;
 
-  for (uint i = 0; i < n; i++) {
+  for (natl i = 0; i < n; i++) {
     *(d + i) = *(s + i);
   }
 }
@@ -76,8 +76,8 @@ void vga_init(char *vga_framebuffer) {
   print_VGA("Hello RISC-V world!\n", 0x02, 0x00);
 }
 
-uint8 readport(uint32 port, uint8 index) {
-  uint8 read;
+natb readport(natl port, natb index) {
+  natb read;
   discard = VGA_BASE[0x3da];
   switch (port) {
   case AC:
@@ -107,7 +107,7 @@ uint8 readport(uint32 port, uint8 index) {
   return read;
 }
 
-void writeport(uint32 port, uint8 index, uint8 val) {
+void writeport(natl port, natb index, natb val) {
   discard = VGA_BASE[0x3da];
   switch (port) {
   case AC:
@@ -422,7 +422,7 @@ void load_font(unsigned char* font_16){
   writeport(SEQ, 0x02, 0x04);
 
   volatile void *vga_buf = (void *)(0x50000000); // 0xa0000
-  for (uint32 i = 0; i < 256; ++i) {
+  for (natl i = 0; i < 256; ++i) {
     memcpy((void *)(vga_buf + 32 * i), (void*)(font_16+16 * i), 16);
   }
 }
@@ -502,9 +502,9 @@ void post_font(){
 }
 
 
-void print_VGA(char *message, uint8 fg, uint8 bg)
+void print_VGA(char *message, natb fg, natb bg)
 {
-  volatile uint8 *p = (void *)(0x50000000 | (0xb8000 - 0xa0000));// 0xb8000
+  volatile natb *p = (void *)(0x50000000 | (0xb8000 - 0xa0000));// 0xb8000
   // take current cursor position
   int cursor = readport(CRTC, 0x0f);
   cursor = (cursor+1)*2 -2; // where to write

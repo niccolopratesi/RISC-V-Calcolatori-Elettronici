@@ -4,7 +4,7 @@
 
 __attribute__ ((aligned (16))) char stack0[4096];
 
-void print_VGA(char *message, uint8 fg, uint8 bg);
+void print_VGA(char *message, natb fg, natb bg);
 
 void timer_debug(){
   boot_printf("Timer fired\n\r");

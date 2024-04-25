@@ -9,13 +9,13 @@ __attribute__ ((aligned (16))) char stack0[4096];
 
 // descrittore di processo
 struct des_proc {
-	uint16 id;
-	uint16 livello;
-	uint32 precedenza;
-	uint64 punt_nucleo;
-	uint64 contesto[N_REG];
-	uint64 epc;
-	uint64 satp;
+	natw id;
+	natw livello;
+	natl precedenza;
+	natq punt_nucleo;
+	natq contesto[N_REG];
+	natq epc;
+	natq satp;
 	// paddr cr3; TODO: Insert pagination info
 
 	struct des_proc *puntatore;

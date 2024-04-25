@@ -4,7 +4,7 @@
 #include "libce.h"
 #include "uart.h"
 
-extern "C" void print_VGA(char *message, uint8 fg, uint8 bg);
+extern "C" void print_VGA(char *message, natb fg, natb bg);
 
 extern "C" natq end;	// ultimo indirizzo del codice sistema (fornito dal collegatore)
 

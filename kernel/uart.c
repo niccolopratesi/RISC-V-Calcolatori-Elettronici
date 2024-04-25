@@ -11,7 +11,7 @@ static void print_int(int xx, int base, int sign)
 {
   char buf[16];
   int i;
-  uint x;
+  natl x;
 
   if(sign && (sign = xx < 0))
     x = -xx;
@@ -30,13 +30,13 @@ static void print_int(int xx, int base, int sign)
     WRITE_UART(buf[i]);
 }
 
-static void print_ptr(uint64 x)
+static void print_ptr(natq x)
 {
   int i;
   WRITE_UART('0');
   WRITE_UART('x');
-  for (i = 0; i < (sizeof(uint64) * 2); i++, x <<= 4)
-    WRITE_UART(digits[x >> (sizeof(uint64) * 8 - 4)]);
+  for (i = 0; i < (sizeof(natq) * 2); i++, x <<= 4)
+    WRITE_UART(digits[x >> (sizeof(natq) * 8 - 4)]);
 }
 
 
@@ -70,7 +70,7 @@ void boot_printf(char *fmt, ...)
       print_int(va_arg(ap, int), 16, 1);
       break;
     case 'p':
-      print_ptr(va_arg(ap, uint64));
+      print_ptr(va_arg(ap, natq));
       break;
     case 's':
       if((s = va_arg(ap, char*)) == 0)

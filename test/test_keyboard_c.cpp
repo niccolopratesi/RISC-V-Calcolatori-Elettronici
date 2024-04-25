@@ -72,7 +72,7 @@ int string = 0;
 #define BUF_SIZE	32
 
 char uart_buf[BUF_SIZE];
-uint64 uart_tx_w;
+natq uart_tx_w;
 
 void uart_intr() {
 
