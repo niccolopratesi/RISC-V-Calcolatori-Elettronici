@@ -15,7 +15,9 @@ extern "C" void do_log(log_sev sev, const char* buf, natl quanti)
 		serial_o(*l++);
 	serial_o((natb)'\t');
 	natb idbuf[10];
-	if (esecuzione->id == 0xFFFF) {
+	if (!esecuzione) {
+		serial_o((natb)'?');
+	} else if (esecuzione->id == 0xFFFF) {
 		serial_o((natb)'-');
 	} else {
 		snprintf((char*)idbuf, 10, "%d", esecuzione->id);
