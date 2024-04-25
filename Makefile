@@ -181,4 +181,4 @@ test_user_debug: $U/user_test
 	$(DEBUG) -kernel $U/user_test
 
 clean:
-	rm $(ODIR)/*.o $K/kernel $T/kernel_test $U/user_test
+	rm -f $(ODIR)/*.o $K/kernel $T/kernel_test $U/user_test
