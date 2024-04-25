@@ -9,6 +9,10 @@ extern "C" void print_VGA(char *message, uint8 fg, uint8 bg);
 
 extern "C" natq end;	// ultimo indirizzo del codice sistema (fornito dal collegatore)
 
+extern "C" natq __user_start; // primo indirizzo del codice utente (fornito dal collegatore)
+extern "C" natq __user_etext; // primo indirizzo dei dati utente (fornito dal collegatore)
+extern "C" natq __user_end; // ultimo indirizzo dei dati utente (fornito dal collegatore)
+
 void creaRootTab(){
     paddr root_tab = (paddr)end;
 	//Align the end address to the pagesize

@@ -1,6 +1,7 @@
 #include "types.h"
 #include "uart.h"
 #include "plic.h"
+#include "pci_risc.h"
 
 #define N_REG  31
 
@@ -23,13 +24,12 @@ struct des_proc *esecuzione;
 struct des_proc init;
 struct des_proc *esecuzione_precedente;
 
-int boot_main();
-void test_stato_c();
-void test_ctors_asm();
-void test_keyboard_c();
-void test_paginazione_c();
 
-int boot_main(){
+extern "C" void test_stato_c();
+extern "C" void test_keyboard_c();
+extern "C" void test_paginazione_c();
+
+extern "C" int boot_main(){
   
   pci_init();
 
@@ -37,23 +37,17 @@ int boot_main(){
 
   plic_init();
   
+  boot_printf("Starting paging test\n\r");
+  test_paginazione_c();
+  boot_printf("Paging test done\n\r");
+  
   boot_printf("Starting salva/carica_stato test.\n\r");
   test_stato_c();
-  boot_printf("Salva/carica_stato test done.\n\r");
-  
-  /*
-  boot_printf("Starting ctors test.\n\r");
-  test_ctors_asm();
-  boot_printf("ctors test done.\n\r");
-  */
+  boot_printf("Salva/carica_stato test done.\n\r");  
   
   boot_printf("Starting keyboard test\n\r");
   test_keyboard_c();
   boot_printf("Keyboard test done\n\r");
-  
-  boot_printf("Starting paging test\n\r");
-  test_paginazione_c();
-  boot_printf("Paging test done\n\r");
   
   boot_printf("All tests done.\n\r");
   return 0;

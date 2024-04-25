@@ -16,5 +16,9 @@ _entry:
         addi a1, a1, 1
         mul a0, a0, a1
         add sp, sp, a0
+        # Since we are still in a C environment, we should
+        # call the ctors function before switching to sistema,
+        # which uses a C++.
+        call ctors
 	# jump to start() in start.c
         call start

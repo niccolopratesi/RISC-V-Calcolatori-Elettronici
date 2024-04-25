@@ -57,18 +57,6 @@ void timer_debug(){
   boot_printf("Timer fired\n\r");
 }
 
-int plic_claim() {
-    int irq = *(uint32*)PLIC_CLAIM;
-
-    return irq;
-}
-
-void plic_complete (int irq) {
-    *(uint32*)PLIC_CLAIM = irq;
-
-    //boot_printf("PLIC Completed\n");
-}
-
 int dev_int() {
     
     if (readSCAUSE() == 0x8000000000000009L) {

@@ -30,9 +30,12 @@ extern "C" void carica_success(){
     boot_printf("Carica_stato done.\n\r");
 }
 
+extern "C" int readSATP();
+
 extern "C" void test_stato_c(){
     init.id = 0xFFFF;
     init.precedenza = 0xFFFFFFFF;
+	init.satp = readSATP();
 	esecuzione = &init;
     test_stato_asm();
 }

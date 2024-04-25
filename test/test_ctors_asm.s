@@ -9,20 +9,20 @@ test_ctors_asm:
 	# chiamare queste funzioni, altrimenti gli oggetti globali non saranno
 	# inizializzati correttamente.
     addi sp, sp, -36
-	sd a0, 0(sp) # RBX
-	sd a1, 8(sp) # R12
-    sd a2, 16(sp)
+	sd s0, 0(sp) # RBX
+	sd s1, 8(sp) # R12
+    sd s2, 16(sp)
     sd ra, 24(sp)
-	ld a0, __init_array_start
-	ld a1, __init_array_end
-1:	beq a0, a1, 2f
-    ld a2, 0(a0)
-	jalr a2 
-	addi a0, a0, 8
+	la s0, __init_array_start
+	la s1, __init_array_end
+1:	beq s0, s1, 2f
+    ld s2, 0(s0)
+	jalr s2 
+	addi s0, s0, 8
 	j 1b
-2:	ld a0, 0(sp) # RBX
-	ld a1, 8(sp) # R12
-    ld a2, 16(sp)
+2:	ld s0, 0(sp) # RBX
+	ld s1, 8(sp) # R12
+    ld s2, 16(sp)
     ld ra, 24(sp)
     addi sp, sp, 36
 	ret
