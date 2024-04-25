@@ -32,6 +32,12 @@ _TESTOBJS = \
 
 TESTOBJS = $(patsubst %,$(ODIR)/%,$(_TESTOBJS))
 
+_USEROBJS = \
+  user_c.o \
+  user_asm.o \
+
+USEROBJS = $(patsubst %,$(ODIR)/%,$(_USEROBJS))
+
 LIBCE_CXX_SOURCES:=$(wildcard libCE/*.cpp)
 LIBCE_AS_SOURCES:=$(wildcard libCE/as/*.s)
 _LIBCE_OBJECTS:=$(notdir $(addsuffix .o, $(basename $(LIBCE_CXX_SOURCES)))) $(notdir $(addsuffix .o, $(basename $(LIBCE_AS_SOURCES))))
@@ -68,6 +74,7 @@ CFLAGS += -Iinclude
 CXXFLAGS = -Wall
 CXXFLAGS += -O0
 CXXFLAGS += -ggdb
+CXXFLAGS += -fpic
 CXXFLAGS += -mcmodel=medany
 CXXFLAGS += -Iinclude
 CXXFLAGS += -fno-exceptions
@@ -126,6 +133,15 @@ $(ODIR)/%.o: $T/%.cpp
 $(ODIR)/%.o: $T/%.s
 	$(AS) $(ASFLAGS) $< -o $@
 
+$(ODIR)/%.o: $U/%.c
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(ODIR)/%.o: $U/%.cpp
+	$(CXX) -c $(CXXFLAGS) $< -o $@
+
+$(ODIR)/%.o: $U/%.s
+	$(AS) $(ASFLAGS) $< -o $@
+
 $(ODIR)/%.o: libCE/%.cpp
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
@@ -141,8 +157,8 @@ $K/kernel: $(OBJS) $(PRODOBJS) $(LIBCE_OBJECTS) $(HEADERS) $K/kernel.ld
 $T/kernel_test: $(OBJS) $(TESTOBJS) $(LIBCE_OBJECTS) $(HEADERS) $K/kernel.ld
 	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $T/kernel_test $(OBJS) $(TESTOBJS) $(LIBCE_OBJECTS)
 
-$U/user_test: $(OBJS) $(TESTOBJS) $(LIBCE_OBJECTS) $(HEADERS) $K/kernel.ld
-	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $T/user_test $(OBJS) $(TESTOBJS) $(LIBCE_OBJECTS)
+$U/user_test: $(OBJS) $(TESTOBJS) $(USEROBJS) $(LIBCE_OBJECTS) $(HEADERS) $K/kernel.ld
+	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $U/user_test $(OBJS) $(TESTOBJS) $(USEROBJS) $(LIBCE_OBJECTS)
 
 compile: $K/kernel
 
@@ -161,5 +177,8 @@ test_debug: $T/kernel_test
 test_user: $U/user_test
 	$(RUN) -kernel $U/user_test
 
+test_user_debug: $U/user_test
+	$(DEBUG) -kernel $U/user_test
+
 clean:
-	rm $(ODIR)/*.o
+	rm $(ODIR)/*.o $K/kernel $T/kernel_test $U/user_test
