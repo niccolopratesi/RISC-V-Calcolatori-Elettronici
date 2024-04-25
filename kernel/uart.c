@@ -1,4 +1,4 @@
-#include "types.h"
+#include "tipo.h"
 #include "uart.h"
 #include <stdarg.h>
 // uart is mapped in UART0

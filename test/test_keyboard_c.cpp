@@ -1,4 +1,3 @@
-#include "types.h"
 #include "tipo.h"
 #include "uart.h"
 

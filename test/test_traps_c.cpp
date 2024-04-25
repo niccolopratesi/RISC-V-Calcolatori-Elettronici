@@ -1,5 +1,4 @@
 #include "tipo.h"
-#include "types.h"
 #include "uart.h"
 #include "def.h"
 #include "plic.h"

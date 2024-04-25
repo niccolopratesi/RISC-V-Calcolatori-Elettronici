@@ -1,4 +1,4 @@
-#include "types.h"
+#include "tipo.h"
 
 #define N_REG  31
 

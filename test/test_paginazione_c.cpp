@@ -1,6 +1,5 @@
 #include "vm.h"
 #include "tipo.h"
-#include "types.h"
 #include "costanti.h"
 #include "libce.h"
 #include "uart.h"

@@ -18,7 +18,7 @@
 //                 https://wiki.osdev.org/VGA_Hardware
 
 
-#include "types.h"
+#include "tipo.h"
 #include "uart.h"
 #include "font.h"
 #include "palette.h"

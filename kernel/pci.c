@@ -2,7 +2,7 @@
 // simple PCI initialization
 // https://wiki.osdev.org/PCI#Address_and_size_of_the_BAR
 //
-#include "types.h"
+#include "tipo.h"
 
 void
 pci_init()

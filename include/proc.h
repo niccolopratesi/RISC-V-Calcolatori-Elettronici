@@ -1,4 +1,4 @@
-#include "types.h"
+#include "tipo.h"
 
 // Saved registers for kernel context switches.
 struct context {

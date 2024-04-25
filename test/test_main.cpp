@@ -1,4 +1,4 @@
-#include "types.h"
+#include "tipo.h"
 #include "uart.h"
 #include "plic.h"
 #include "pci_risc.h"

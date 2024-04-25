@@ -1,6 +1,5 @@
 #include "plic.h"
 #include "tipo.h"
-#include "types.h"
 #include "uart.h"
 
 void plic_init() {
