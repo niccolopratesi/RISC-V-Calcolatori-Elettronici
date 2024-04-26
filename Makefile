@@ -3,15 +3,9 @@ U=user
 T=test
 ODIR=objs
 
-_OBJS = \
-  entry.o \
-  start.o \
-  machine_interrupts.o \
-  vga.o \
-  pci.o \
-  ctors.o \
-  uart.o \
-  plic.o\
+_OBJS = $(patsubst $(K)/%.c,%.o,$(wildcard $(K)/*.c)) $(patsubst $(K)/%.s,%.o,$(wildcard $(K)/*.s)) $(patsubst $(K)/%.cpp,%.o,$(wildcard $(K)/*.cpp))
+_OBJS := $(filter-out boot_main.o, $(_OBJS))
+_OBJS := $(filter-out vm.o, $(_OBJS))
 
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
@@ -20,22 +14,10 @@ _PRODOBJS = \
 
 PRODOBJS = $(patsubst %,$(ODIR)/%,$(_PRODOBJS))
   
-_TESTOBJS = \
-  test_stato_c.o \
-  test_stato_asm.o \
-  test_main.o \
-  test_ctors_asm.o \
-  test_keyboard_c.o \
-  test_traps_asm.o \
-  test_traps_c.o \
-  test_paginazione_c.o \
-
+_TESTOBJS = $(patsubst $(T)/%.c,%.o,$(wildcard $(T)/*.c)) $(patsubst $(T)/%.s,%.o,$(wildcard $(T)/*.s)) $(patsubst $(T)/%.cpp,%.o,$(wildcard $(T)/*.cpp))
 TESTOBJS = $(patsubst %,$(ODIR)/%,$(_TESTOBJS))
 
-_USEROBJS = \
-  user_c.o \
-  user_asm.o \
-
+_USEROBJS = $(patsubst $(U)/%.c,%.o,$(wildcard $(U)/*.c)) $(patsubst $(U)/%.s,%.o,$(wildcard $(U)/*.s)) $(patsubst $(U)/%.cpp,%.o,$(wildcard $(U)/*.cpp))
 USEROBJS = $(patsubst %,$(ODIR)/%,$(_USEROBJS))
 
 LIBCE_CXX_SOURCES:=$(wildcard libCE/*.cpp)

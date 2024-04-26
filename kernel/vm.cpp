@@ -1,42 +1,23 @@
 #include "vm.h"
-#include "tipo.h"
 #include "costanti.h"
-#include "libce.h"
-#include "uart.h"
 
-extern "C" void print_VGA(char *message, natb fg, natb bg);
+////////////////////////////////////////////////////////////////////////////////
+//                         MEMORIA DINAMICA					       //
+/////////////////////////////////////////////////////////////////////////////////
 
-extern "C" natq end;	// ultimo indirizzo del codice sistema (fornito dal collegatore)
+void *operator new(size_t s)
+{
+	return alloca(s);
+}
 
-extern "C" natq __user_start; // primo indirizzo del codice utente (fornito dal collegatore)
-extern "C" natq __user_etext; // primo indirizzo dei dati utente (fornito dal collegatore)
-extern "C" natq __user_end; // ultimo indirizzo dei dati utente (fornito dal collegatore)
+void operator delete(void *p)
+{
+	dealloca(p);
+}
 
-void creaRootTab(){
-    paddr root_tab = (paddr)end;
-	//Align the end address to the pagesize
-	root_tab = root_tab + (DIM_PAGINA - (root_tab % DIM_PAGINA));
-	paddr tab = root_tab;
-	for (tab_iter it(root_tab, 0, 4 * GiB); it; it.next())
-	{
-		tab_entry &e = it.get_e();
-
-		if (it.get_l() > 2)
-		{
-			memset((void *)tab, 0, DIM_PAGINA);
-			set_IND_FISICO(e, tab);
-			e |= BIT_V;
-			tab += DIM_PAGINA;
-		}
-		else
-		{
-			vaddr v = it.get_v();
-			set_IND_FISICO(e, v);
-			e |= BIT_V | BIT_R | BIT_W | BIT_X;
-		}
-	}
-
-	writeSATP(root_tab);
+void* operator new(size_t s, align_val_t a)
+{
+	return alloc_aligned(s, a);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -65,6 +46,11 @@ natq primo_frame_libero;
 // numero di frame nella lista dei frame liberi
 natq num_frame_liberi;
 
+// ultimo indirizzo del modulo sistema + heap sistema, fornito dal collegatore
+extern "C" natq end;
+// ultimo indirizzo del modulo utente, fornito dal collegatore
+extern "C" natq __user_end;
+
 // init_des_frame viene chiamata in fase di inizializzazione.  Tutta la memoria
 // non ancora occupata viene usata per i frame.  La funzione si preoccupa anche
 // di inizializzare i descrittori dei frame in modo da creare la lista dei
@@ -76,6 +62,8 @@ void init_frame()
 {
 	// primo frame di M2
 	paddr fine_M1 = allinea(reinterpret_cast<paddr>(&end), DIM_PAGINA);
+    // primo frame libero
+    paddr fine_user = allinea(reinterpret_cast<paddr>(&__user_end), DIM_PAGINA);
 	// numero di frame in M1 e indice di f in vdf
 	N_M1 = (fine_M1-0x80000000) / DIM_PAGINA;
 	// numero di frame in M2
@@ -84,9 +72,12 @@ void init_frame()
 	if (!N_M2)
 		return;
 
+    // numero di frame occupati dal modulo utente
+    natq N_UTN = (fine_user-fine_M1) / DIM_PAGINA;
+
 	// creiamo la lista dei frame liberi, che inizialmente contiene tutti i
-	// frame di M2
-	primo_frame_libero = N_M1;
+	// frame di M2 non occupati dal modulo utente
+	primo_frame_libero = N_M1 + N_UTN;
 #ifndef N_STEP
 	// alcuni esercizi definiscono N_STEP == 2 per creare mapping non
 	// contigui in memoria virtale e controllare meglio alcuni possibili
@@ -95,7 +86,7 @@ void init_frame()
 #endif
 	natq last;
 	for (natq j = 0; j < N_STEP; j++) {
-		for (natq i = j; i < N_M2; i += N_STEP) {
+		for (natq i = j; i < N_M2 - N_UTN; i += N_STEP) {
 			vdf[primo_frame_libero + i].prossimo_libero =
 				primo_frame_libero + i + N_STEP;
 			num_frame_liberi++;
@@ -155,7 +146,7 @@ natl get_ref(paddr f)
 /////////////////////////////////////////////////////////////////////////////////
 
 // indirizzo virtuale di partenza delle varie zone della memoria
-// virtuale dei proceii
+// virtuale dei processi
 
 const vaddr ini_sis_c = norm(I_SIS_C * dim_region(MAX_LIV - 1)); // sistema condivisa
 const vaddr ini_sis_p = norm(I_SIS_P * dim_region(MAX_LIV - 1)); // sistema privata
@@ -263,7 +254,7 @@ void set_des(paddr dst, natl i, natl n, tab_entry e)
 //		/* inizializza 'e' in modo che punti a 'new_f' */
 //	}
 // }
-#include "type_traits.h"
+#include "type_traits"
 template<typename T, typename = std::enable_if_t<!std::is_same_v<T, paddr(vaddr)>>>
 vaddr map(paddr tab, vaddr begin, vaddr end, natl flags, const T& getpaddr, int ps_lvl = 1)
 {
@@ -551,4 +542,3 @@ extern "C" void test_paginazione_c(){
 
 	flog(LOG_INFO, "Hello from flog");
 } 
-

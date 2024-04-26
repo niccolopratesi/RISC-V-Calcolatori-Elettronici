@@ -1,5 +1,5 @@
+#include "libce.h"
 #include "plic.h"
-#include "tipo.h"
 #include "uart.h"
 
 void plic_init() {
@@ -10,7 +10,7 @@ void plic_init() {
 
     *(natl*)PLIC_THRESHOLD = 0;
 
-    boot_printf("PLIC Initialized\n");
+    flog(LOG_INFO, "PLIC Initialized\n");
 
 }
 

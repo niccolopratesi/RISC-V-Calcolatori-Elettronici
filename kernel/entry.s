@@ -20,5 +20,5 @@ _entry:
         # call the ctors function before switching to sistema,
         # which uses a C++.
         call ctors
-	# jump to start() in start.c
+	# jump to start in start.s
         call start

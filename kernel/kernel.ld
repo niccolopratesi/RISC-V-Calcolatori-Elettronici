@@ -213,7 +213,6 @@ SECTIONS
   __BSS_END__ = .;
     __global_pointer$ = MIN(__SDATA_BEGIN__ + 0x800,
 		            MAX(__DATA_BEGIN__ + 0x800, __BSS_END__ - 0x800));
-  _end = .; PROVIDE (end = .);
 
   /* SYS_HEAP SECTION */
   .heap           :
@@ -222,17 +221,18 @@ SECTIONS
     __heap_start = .;
     . = . + 0x100000; /* 1MiB */
     __heap_end = .;
+    _end = .; PROVIDE (end = .);
   }
 
   /* START OF USER MODULE */
   .user          :
   {
     . = ALIGN(0x1000);
-    __user_start = .;
+    PROVIDE (__user_start = .);
     KEEP(objs/user*.o(.main))
     KEEP(objs/user*.o(.text .text.*))
     . = ALIGN(0x1000);
-    __user_etext = .;
+    PROVIDE (__user_etext = .);
 
     KEEP(objs/user*.o(.srodata .srodata.*))
     . = ALIGN(16);
@@ -249,7 +249,7 @@ SECTIONS
     KEEP(objs/user*.o(dynbss))
     KEEP(objs/user*.o(.bss .bss.*))
     KEEP(objs/user*.o(COMMON))
-    __user_end = .;
+    PROVIDE (__user_end = .);
   }
   /* . = DATA_SEGMENT_END (.); */
   /* Stabs debugging sections.  */
