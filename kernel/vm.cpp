@@ -1,3 +1,4 @@
+#include "libce.h"
 #include "vm.h"
 #include "costanti.h"
 
@@ -254,7 +255,7 @@ void set_des(paddr dst, natl i, natl n, tab_entry e)
 //		/* inizializza 'e' in modo che punti a 'new_f' */
 //	}
 // }
-#include "type_traits"
+#include "type_traits.h"
 template<typename T, typename = std::enable_if_t<!std::is_same_v<T, paddr(vaddr)>>>
 vaddr map(paddr tab, vaddr begin, vaddr end, natl flags, const T& getpaddr, int ps_lvl = 1)
 {
@@ -519,7 +520,7 @@ paddr trasforma(paddr root_tab, vaddr v)
 }
 
 ///////////////////////////////////
-
+/*
 extern "C" void test_paginazione_c(){
     // iizializziamo la parte M2
 	init_frame();
@@ -542,3 +543,4 @@ extern "C" void test_paginazione_c(){
 
 	flog(LOG_INFO, "Hello from flog");
 } 
+*/

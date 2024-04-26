@@ -205,6 +205,15 @@ extern "C" void invalida_TLB();
 // invalida una entrata del TLB
 extern "C" void invalida_entrata_TLB(vaddr v);
 
+// inizializza la lista dei frame liberi
+extern "C" void init_frame();
+
+// alloca una tabella
+extern "C" paddr alloca_tab();
+
+// crea la finestra di memoria
+extern "C" bool crea_finestra_FM(paddr root_tab);
+
 // Spazio utente
 #define TRAMPOLINE	(MAXVA - DIM_PAGINA)
 #define TRAPFRAME	(TRAMPOLINE - DIM_PAGINA)
