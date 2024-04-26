@@ -1,5 +1,4 @@
 #include "libce.h"
-#include "tipo.h"
 #include "uart.h"
 #include "plic.h"
 #include "pci_risc.h"
@@ -19,6 +18,7 @@ extern "C" int boot_main(){
   flog(LOG_INFO, "VGA inizialized");
 
   plic_init();
+  flog(LOG_INFO, "PLIC Initialized\n");
 
   /* paginazione */
   return 0;

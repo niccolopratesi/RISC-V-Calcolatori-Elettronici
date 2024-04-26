@@ -17,10 +17,10 @@ extern "C" void test_paginazione_c(){
 	// ogni volta che si attiva un nuovo processo
 	paddr root_tab = alloca_tab();
 	if (!root_tab)
-		boot_printf("Errore allocazione tabella root");
+		flog(LOG_WARN, "Errore allocazione tabella root");
 	// finestra di memoria, che corrisponde alla parte sis/cond
 	if(!crea_finestra_FM(root_tab))
-		boot_printf("Errore creazione finestra FM\n");
+		flog(LOG_WARN, "Errore creazione finestra FM\n");
 
 	// Attivazione paginazione
 	writeSATP(root_tab);

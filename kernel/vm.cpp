@@ -272,7 +272,6 @@ vaddr map(paddr tab, vaddr begin, vaddr end, natl flags, T& getpaddr, int ps_lvl
 	const char *err_msg = "";
 	natq allowed_flags = BIT_G | BIT_U | BIT_X | BIT_W | BIT_R;
 
-	//boot_printf("Lancio map con tab begin end flags | %p %p %p %d\n",tab,begin,end,flags);
 	int count = 0;
 
 	// controlliamo che ps_lvl abbia uno dei valori consentiti
@@ -335,7 +334,6 @@ vaddr map(paddr tab, vaddr begin, vaddr end, natl flags, T& getpaddr, int ps_lvl
 			// arrivati ai descrittori di livello ps_lvl creiamo la
 			// traduzione vera e propria.
 			if (e & BIT_V) {
-				boot_printf("Map error: e ind l v new_f count | %p %p %d %p %p %d\n",e,&e,l,v,new_f,count);
 				err_msg = "gia' mappato";
 				goto error;
 			}
@@ -367,7 +365,7 @@ vaddr map(paddr tab, vaddr begin, vaddr end, natl flags, T& getpaddr, int ps_lvl
 	return end;
 
 error:
-	boot_printf("map: indirizzo %p, livello %d: %s\n", v, l, err_msg);
+	flog(LOG_WARN, "map: indirizzo %p, livello %d: %s\n", v, l, err_msg);
 	// it punta all'ultima entrata visitata. Se si tratta di una tabella
 	// dobbiamo provare a deallocare tutto il percorso che abbiamo creato
 	// fino a quel punto. Una chiamata ad unmap() non è sufficiente, in
@@ -488,7 +486,7 @@ bool crea_finestra_FM(paddr root_tab)
 	if (map(root_tab, KERNBASE, KERNBASE+MEM_TOT, BIT_X | BIT_W | BIT_R, identity_map, 2) != KERNBASE+MEM_TOT)
 		return false;
 
-	boot_printf("Creata finestra sulla memoria centrale:  [%p, %p)\n", DIM_PAGINA, KERNBASE+MEM_TOT);
+	flog(LOG_INFO, "Creata finestra sulla memoria centrale:  [%p, %p)\n", DIM_PAGINA, KERNBASE+MEM_TOT);
 
 	return true;
 }

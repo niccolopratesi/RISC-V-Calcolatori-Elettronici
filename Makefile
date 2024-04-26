@@ -5,7 +5,7 @@ ODIR=objs
 
 _OBJS = $(patsubst $(K)/%.c,%.o,$(wildcard $(K)/*.c)) $(patsubst $(K)/%.s,%.o,$(wildcard $(K)/*.s)) $(patsubst $(K)/%.cpp,%.o,$(wildcard $(K)/*.cpp))
 _OBJS := $(filter-out boot_main.o, $(_OBJS))
-_OBJS := $(filter-out vm.o, $(_OBJS))
+_OBJS := $(filter-out processi_c.o, $(_OBJS))
 
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 

@@ -1,4 +1,4 @@
-#include "tipo.h"
+#include "libce.h"
 #include "uart.h"
 #include "plic.h"
 #include "pci_risc.h"
@@ -30,26 +30,27 @@ extern "C" void test_keyboard_c();
 extern "C" void test_paginazione_c();
 
 extern "C" int boot_main(){
+  flog(LOG_INFO, "Running in S-Mode");
   
   pci_init();
 
-  boot_printf("\n\nStarting tests...\n\r");
+  flog(LOG_INFO, "Starting tests...");
 
   plic_init();
   
-  boot_printf("Starting paging test\n\r");
+  flog(LOG_INFO, "Starting paging test");
   test_paginazione_c();
-  boot_printf("Paging test done\n\r");
+  flog(LOG_INFO, "Paging test done");
   
-  boot_printf("Starting salva/carica_stato test.\n\r");
+  flog(LOG_INFO, "Starting salva/carica_stato test.");
   test_stato_c();
-  boot_printf("Salva/carica_stato test done.\n\r");  
+  flog(LOG_INFO, "Salva/carica_stato test done.");  
   
-  boot_printf("Starting keyboard test\n\r");
+  flog(LOG_INFO, "Starting keyboard test");
   test_keyboard_c();
-  boot_printf("Keyboard test done\n\r");
+  flog(LOG_INFO, "Keyboard test done");
   
-  boot_printf("All tests done.\n\r");
+  flog(LOG_INFO, "All tests done.");
   return 0;
 
 }

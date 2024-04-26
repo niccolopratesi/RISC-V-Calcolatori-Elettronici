@@ -1,4 +1,4 @@
-#include "tipo.h"
+#include "libce.h"
 #include "uart.h"
 #include "def.h"
 #include "plic.h"
@@ -45,15 +45,13 @@ extern "C" void setSPreviousInterruptEnable();
 
 static void panic(char *s)
 {
-  boot_printf("panic: ");
-  boot_printf(s);
-  boot_printf("\n");
+  flog(LOG_INFO, "panic: %s", s);
   for(;;)
     ;
 }
 
 void timer_debug(){
-  boot_printf("Timer fired\n\r");
+  flog(LOG_INFO, "Timer fired\n\r");
 }
 
 int dev_int() {
@@ -65,7 +63,7 @@ int dev_int() {
         if (irq == UART0_IRQ) 
             uart_intr();
         else 
-            boot_printf("Unexpected interrupt: %d\n", irq);
+            flog(LOG_WARN, "Unexpected interrupt: %d\n", irq);
 
         if (irq)
             plic_complete(irq);
@@ -108,8 +106,8 @@ extern "C" void sInterruptHandler(){
         // OK
     }
     else {
-        boot_printf("unexpected scause=%p, pid=%p\n", readSCAUSE(), esecuzione->id);
-        boot_printf("sepc=%p, stval=%p\n", readSEPC(), readSTVAL());
+        flog(LOG_WARN, "unexpected scause=%p, pid=%p\n", readSCAUSE(), esecuzione->id);
+        flog(LOG_WARN, "sepc=%p, stval=%p\n", readSEPC(), readSTVAL());
         // TODO: distruggi il processo
     }
 
@@ -156,8 +154,8 @@ extern "C" void kInterruptHandler(){
     
     if (dev_int() == 0) {
         // Eccezione
-        boot_printf("scause=%p\n", readSCAUSE());
-        boot_printf("sepc=%p, stval=%p\n", readSEPC(), readSTVAL());
+        flog(LOG_WARN, "scause=%p\n", readSCAUSE());
+        flog(LOG_WARN, "sepc=%p, stval=%p\n", readSEPC(), readSTVAL());
         panic("kerneltrap");
     }
 

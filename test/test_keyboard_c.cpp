@@ -1,4 +1,4 @@
-#include "tipo.h"
+#include "libce.h"
 #include "uart.h"
 
 extern "C" int readSSIP();
@@ -93,7 +93,7 @@ void uart_intr() {
 
 	else {
 		
-		boot_printf("Interruzione UART\n");
+		flog(LOG_INFO,"Interruzione UART\n");
 
 		testChar = (char)READ_UART();
 

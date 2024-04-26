@@ -1,4 +1,5 @@
-#include "libce.h"
+//#include "libce.h"
+#include "tipo.h"
 #include "plic.h"
 #include "uart.h"
 
@@ -9,9 +10,6 @@ void plic_init() {
     *(natl*)PLIC_ENABLE = (1 << UART0_IRQ);
 
     *(natl*)PLIC_THRESHOLD = 0;
-
-    flog(LOG_INFO, "PLIC Initialized\n");
-
 }
 
 int plic_claim() {
@@ -21,8 +19,6 @@ int plic_claim() {
 
 void plic_complete(int irq) {
     *(natl*)PLIC_CLAIM = irq;
-
-    //boot_printf("PLIC Completed\n");
 }
 
 
