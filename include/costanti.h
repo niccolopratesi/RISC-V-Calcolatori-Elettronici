@@ -1,3 +1,5 @@
+#ifndef _COSTANTI_H_
+#define _COSTANTI_H_
 // ( varie dimensioni
 #define KiB			1024UL
 #define MiB			(1024*KiB)
@@ -86,9 +88,6 @@
 
 // )
 
-// ( massimo livello supportato per il bit PS
-#define MAX_PS_LVL		2
-// )
 
 // ( costanti non modificabili
 #define MIN_PROC_ID		0
@@ -99,6 +98,8 @@
 #define SEL_CODICE_SISTEMA	0x8
 #define SEL_CODICE_UTENTE	0x13
 #define SEL_DATI_UTENTE 	0x1b
-#define LIV_UTENTE		3
-#define LIV_SISTEMA		0
+#define LIV_UTENTE		    0
+#define LIV_SISTEMA         1
+#define LIV_MACCHINA        3
 // )
+#endif

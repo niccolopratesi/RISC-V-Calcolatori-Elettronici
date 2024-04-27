@@ -1,5 +1,5 @@
 #include "libce.h"
-#include "uart.h"
+#include "proc.h"
 #include "plic.h"
 #include "pci_risc.h"
 
@@ -7,22 +7,22 @@
 
 __attribute__ ((aligned (16))) char stack0[4096];
 
-// descrittore di processo
-struct des_proc {
-	natw id;
-	natw livello;
-	natl precedenza;
-	natq punt_nucleo;
-	natq contesto[N_REG];
-	natq epc;
-	natq satp;
-	// paddr cr3; TODO: Insert pagination info
+// // descrittore di processo
+// struct des_proc {
+// 	natw id;
+// 	natw livello;
+// 	natl precedenza;
+// 	natq punt_nucleo;
+// 	natq contesto[N_REG];
+// 	natq epc;
+// 	natq satp;
+// 	// paddr cr3; TODO: Insert pagination info
 
-	struct des_proc *puntatore;
-};
-struct des_proc *esecuzione;
-struct des_proc init;
-struct des_proc *esecuzione_precedente;
+// 	struct des_proc *puntatore;
+// };
+extern des_proc *esecuzione;
+extern des_proc init;
+extern des_proc *esecuzione_precedente;
 
 
 extern "C" void test_stato_c();

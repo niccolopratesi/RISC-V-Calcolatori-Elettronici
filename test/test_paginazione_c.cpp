@@ -4,10 +4,6 @@
 #include "libce.h"
 #include "uart.h"
 
-extern "C" void init_frame();
-extern "C" paddr alloca_tab();
-extern "C" bool crea_finestra_FM(paddr root_tab);
-
 extern "C" void test_paginazione_c(){
     // iizializziamo la parte M2
 	init_frame();

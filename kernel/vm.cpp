@@ -1,6 +1,7 @@
 #include "libce.h"
 #include "vm.h"
 #include "costanti.h"
+#include "uart.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 //                         MEMORIA DINAMICA					       //
@@ -11,7 +12,7 @@ void *operator new(size_t s)
 	return alloca(s);
 }
 
-void operator delete(void *p)
+void operator delete(void *p, unsigned long)
 {
 	dealloca(p);
 }
@@ -146,22 +147,6 @@ natl get_ref(paddr f)
 //                         PAGINAZIONE                                         //
 /////////////////////////////////////////////////////////////////////////////////
 
-// indirizzo virtuale di partenza delle varie zone della memoria
-// virtuale dei processi
-
-const vaddr ini_sis_c = norm(I_SIS_C * dim_region(MAX_LIV - 1)); // sistema condivisa
-const vaddr ini_sis_p = norm(I_SIS_P * dim_region(MAX_LIV - 1)); // sistema privata
-const vaddr ini_mio_c = norm(I_MIO_C * dim_region(MAX_LIV - 1)); // modulo IO
-const vaddr ini_utn_c = norm(I_UTN_C * dim_region(MAX_LIV - 1)); // utente condivisa
-const vaddr ini_utn_p = norm(I_UTN_P * dim_region(MAX_LIV - 1)); // utente privata
-
-// indirizzo del primo byte che non appartiene alla zona specificata
-const vaddr fin_sis_c = ini_sis_c + dim_region(MAX_LIV - 1) * N_SIS_C;
-const vaddr fin_sis_p = ini_sis_p + dim_region(MAX_LIV - 1) * N_SIS_P;
-const vaddr fin_mio_c = ini_mio_c + dim_region(MAX_LIV - 1) * N_MIO_C;
-const vaddr fin_utn_c = ini_utn_c + dim_region(MAX_LIV - 1) * N_UTN_C;
-const vaddr fin_utn_p = ini_utn_p + dim_region(MAX_LIV - 1) * N_UTN_P;
-
 // alloca un frame libero destinato a contenere una tabella
 paddr alloca_tab()
 {
@@ -216,225 +201,6 @@ void set_des(paddr dst, natl i, natl n, tab_entry e)
 	}
 }
 
-// crea tutto il sottoalbero, con radice tab, necessario a tradurre tutti gli
-// indirizzi dell'intervallo [begin, end). L'intero intervallo non deve
-// contenere traduzioni pre-esistenti.
-//
-// I bit RW e US che sono a 1 nel parametro flags saranno settati anche in
-// tutti i descrittori rilevanti del sottoalbero. Se flags contiene i bit PCD e/o PWT,
-// questi saranno settati solo sui descrittori foglia.
-//
-// Il tipo getpaddr deve poter essere invocato come 'getpaddr(v)', dove 'v' è
-// un indirizzo virtuale. L'invocazione deve restituire l'indirizzo fisico che
-// si vuole far corrispondere a 'v'.
-//
-// La funzione, per default, crea traduzioni con pagine di livello 1. Se si
-// vogliono usare pagine di livello superiore (da 2 a MAX_PS_LVL) occorre
-// passare anche il parametro ps_lvl.
-//
-// La funzione restituisce il primo indirizzo non mappato, che in caso di
-// sucesso è end. Un valore diverso da end segnala che si è verificato
-// un problema durante l'operazione (per esempio: memoria esaurita, indirizzo
-// già mappato).
-//
-// Lo schema generale della funzione, escludendo i controlli sugli errori e
-// la gestione dei flag, è il seguente:
-//
-// new_f = 0;
-// for (/* tutto il sotto-albero visitato in pre-ordine */) {
-// 	tab_entry& e = 	/* riferimento all'entrata corrente */
-// 	vaddr v = 	/* indirizzo virtuale corrente */
-//	if (/* livello non foglia */) {
-//		if (/* tabella assente */) {
-//			new_f = alloca_tab();
-//		}
-//	} else {
-//		new_f = getpaddr(v);
-//	}
-//	if (new_f) {
-//		/* inizializza 'e' in modo che punti a 'new_f' */
-//	}
-// }
-#include "type_traits.h"
-template<typename T, typename = std::enable_if_t<!std::is_same_v<T, paddr(vaddr)>>>
-vaddr map(paddr tab, vaddr begin, vaddr end, natl flags, const T& getpaddr, int ps_lvl = 1)
-{
-	// adattatore nel caso in cui getpaddr non sia un lvalue
-	T tmp = getpaddr;
-	return map(tab, begin, end, flags, tmp, ps_lvl);
-}
-template<typename T>
-vaddr map(paddr tab, vaddr begin, vaddr end, natl flags, T& getpaddr, int ps_lvl = 1)
-{
-	vaddr v;	/* indirizzo virtuale corrente */
-	int l;		/* livello (del TRIE) corrente */
-	natq dr;	/* dimensione delle regioni di livello ps_lvl */
-	const char *err_msg = "";
-	natq allowed_flags = BIT_G | BIT_U | BIT_X | BIT_W | BIT_R;
-
-	int count = 0;
-
-	// controlliamo che ps_lvl abbia uno dei valori consentiti
-	if (ps_lvl < 1 || ps_lvl > MAX_PS_LVL) {
-		fpanic("map: ps_lvl %d non ammesso (deve essere compreso tra 2 e %d)",
-				ps_lvl, MAX_PS_LVL);
-	}
-	// il mapping coinvolge sempre almeno pagine, quindi consideriamo come
-	// erronei dei parametri beg, end che non sono allineati alle pagine
-	// (di livello ps_lvl)
-	dr = dim_region(ps_lvl - 1);
-	if (begin & (dr - 1)) {
-		fpanic("map: begin=%p non allineato alle pagine di livello %d",
-				begin, ps_lvl);
-	}
-	if (end & (dr - 1)) {
-		fpanic("map: end=%p non allineato alle pagine di livello %d",
-				end, ps_lvl);
-	}
-	// controlliamo che flags contenga solo i flag che possiamo gestire
-	if (flags & ~allowed_flags) {
-		fpanic("map: flags contiene bit non validi: %x", flags & ~allowed_flags);
-	}
-
-	// usiamo un tab_iter per percorrere tutto il sottoalbero.  Si noti che
-	// il sottoalbero verrà costruito man mano che lo visitiamo.
-	//
-	// Si noti che tab_iter fa ulteriori controlli sulla validità
-	// dell'intervallo (si veda tab_iter::valid_interval in libce)
-	//
-	// mentre percorriamo l'albero controlliamo che non esistano già
-	// traduzioni per qualche indirizzo in [begin, end). In caso contrario
-	// ci fermiamo restituendo errore.
-	tab_iter it(tab, begin, end - begin);
-	for ( /* niente */ ; it; it.next()) {
-		tab_entry& e = it.get_e();
-		l = it.get_l();
-		v = it.get_v();
-		// new_f diventerà diverso da 0 se dobbiamo settare a 1 il bit
-		// P di 'e'
-		paddr new_f = 0;
-
-		if (l > ps_lvl) {
-			// per tutti i livelli non "foglia" allochiamo la
-			// tabella di livello inferiore e facciamo in modo che
-			// il descrittore corrente la punti (Si noti che la
-			// tabella potrebbe esistere già, e in quel caso non
-			// facciamo niente)
-			if (!(e & BIT_V)) {
-				new_f = alloca_tab();
-				if (!new_f) {
-					err_msg = "impossibile allocare tabella";
-					goto error;
-				}
-			} else if ((e & BIT_R) || (e & BIT_W) || (e & BIT_X)) {
-				err_msg = "gia' mappato";
-				goto error;
-			}
-		} else {
-			// arrivati ai descrittori di livello ps_lvl creiamo la
-			// traduzione vera e propria.
-			if (e & BIT_V) {
-				err_msg = "gia' mappato";
-				goto error;
-			}
-			// otteniamo il corrispondente indirizzo fisico
-			// chiedendolo all'oggetto getpaddr
-			new_f = getpaddr(v);
-			if (!new_f) {
-				err_msg = "getpaddr() ha restituito 0";
-				goto error;
-			}
-
-			// settiamo i bit dei flag richiesti
-			e |= flags;
-
-			count++;
-		}
-		if (new_f) {
-			// 'e' non puntava a niente e ora deve puntare a new_f
-			set_IND_FISICO(e, new_f);
-			e |= BIT_V;
-
-			// ricordiamoci di incrementare il contatore delle entrate
-			// valide della tabella a cui 'e' appartiene
-			inc_ref(it.get_tab());
-
-		}
-
-	}
-	return end;
-
-error:
-	flog(LOG_WARN, "map: indirizzo %p, livello %d: %s\n", v, l, err_msg);
-	// it punta all'ultima entrata visitata. Se si tratta di una tabella
-	// dobbiamo provare a deallocare tutto il percorso che abbiamo creato
-	// fino a quel punto. Una chiamata ad unmap() non è sufficiente, in
-	// quanto queste tabelle potrebbero non contenere traduzioni complete.
-	paddr p = it.get_tab();
-	for (;;) {
-		if (get_ref(p))
-			break;
-		rilascia_tab(p);
-		if (!it.up())
-			break;
-		it.get_e() = 0;
-		p = it.get_tab();
-		dec_ref(p);
-	}
-	return (v > begin ? v : begin);
-}
-
-// elimina tutte le traduzioni nell'intervallo [begin, end).  Rilascia
-// automaticamente tutte le sottotabelle che diventano vuote dopo aver
-// eliminato le traduzioni. Per liberare le pagine vere e proprie, invece,
-// chiama la funzione putpaddr() passandole l'indirizzo virtuale, fisico e il
-// livello della pagina da elinimare.
-template<typename T, typename = std::enable_if_t<!std::is_same_v<T, void(vaddr, paddr, int)>>>
-void unmap(paddr tab, vaddr begin, vaddr end, const T& putpaddr)
-{
-	// adattatore nel caso in cui putpaddr non sia un lvalue
-	T tmp = putpaddr;
-	unmap(tab, begin, end, tmp);
-}
-template<typename T>
-void unmap(paddr tab, vaddr begin, vaddr end, T& putpaddr)
-{
-	tab_iter it(tab, begin, end - begin);
-	// eseguiamo una visita in ordine posticipato
-	for (it.post(); it; it.next_post()) {
-		tab_entry& e = it.get_e();
-
-		if (!(e & BIT_V))
-			continue;
-
-		paddr p = extr_IND_FISICO(e);
-		if (!it.is_leaf()) {
-			// l'entrata punta a una tabella.
-			if (!get_ref(p)) {
-				// Se la tabella non contiene più entrate
-				// valide la deallochiamo
-				rilascia_tab(p);
-			} else {
-				// altrimenti non facciamo niente
-				// (la tabella serve per traduzioni esterne
-				// all'intervallo da eliminare)
-				continue;
-			}
-		} else {
-			// l'entrata punta ad una pagina (di livello it.get_l())
-			// lasciamo al chiamante decidere cosa fare
-			// con l'indirizzo fisico puntato da 'e'
-			putpaddr(it.get_v(), p, it.get_l());
-		}
-
-		// per tutte le pagine, e per le tabelle che abbiamo
-		// deallocato, azzeriamo l'entrata 'e' e decrementiamo il
-		// contatore delle entrate valide nella tabella che la contiene
-		e = 0;
-		dec_ref(it.get_tab());
-	}
-}
-
 // restituisce true sse v appartiene alla parte utente/condivisa
 bool in_utn_c(vaddr v)
 {
@@ -486,7 +252,7 @@ bool crea_finestra_FM(paddr root_tab)
 	if (map(root_tab, KERNBASE, KERNBASE+MEM_TOT, BIT_X | BIT_W | BIT_R, identity_map, 2) != KERNBASE+MEM_TOT)
 		return false;
 
-	flog(LOG_INFO, "Creata finestra sulla memoria centrale:  [%p, %p)\n", DIM_PAGINA, KERNBASE+MEM_TOT);
+	flog(LOG_INFO, "Creata finestra sulla memoria centrale:  [%p, %p)", DIM_PAGINA, KERNBASE+MEM_TOT);
 
 	return true;
 }

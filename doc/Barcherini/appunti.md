@@ -13,3 +13,4 @@ Il segmento utente va compilato con -fpic per renderlo position-independent e li
 - mappare la memoria
 
 Aggiornata ctors con registri preservati e modificati i file c in cpp (tranne pci, vga, plic e uart)
+

@@ -93,7 +93,7 @@ void uart_intr() {
 
 	else {
 		
-		flog(LOG_INFO,"Interruzione UART\n");
+		flog(LOG_INFO,"Interruzione UART");
 
 		testChar = (char)READ_UART();
 
@@ -122,6 +122,7 @@ void read_string() {
 
 		string = 1;
 		c = READ_UART_REG(UART_LSR);
+		char cc = READ_UART();
 
 	} while ((!(c & 0x01)) && !(READ_UART() == 13));
 

@@ -2,28 +2,11 @@
 #include "uart.h"
 #include "def.h"
 #include "plic.h"
-#include "proc.h"   // struct trapframe
-#define N_REG  33
+#include "proc.h"
 
-//__attribute__ ((aligned (16))) char stack0[4096];
-
-// descrittore di processo
-struct des_proc {
-	natw id;
-	natw livello;
-	natl precedenza;
-	natq punt_nucleo;
-	natq contesto[N_REG];
-	natq epc;
-	natq satp;    // User page table
-	// paddr cr3; TODO: Insert pagination info
-    struct trapframe* trapframe;
-
-	des_proc *puntatore;
-};
-static des_proc *esecuzione;
-static des_proc init;
-static des_proc *esecuzione_precedente;
+extern des_proc *esecuzione;
+extern des_proc init;
+extern des_proc *esecuzione_precedente;
 
 extern "C" void s_trap();
 extern "C" void k_trap();
@@ -43,15 +26,8 @@ extern "C" int readSSIP();
 extern "C" int readSATP();
 extern "C" void setSPreviousInterruptEnable();
 
-static void panic(char *s)
-{
-  flog(LOG_INFO, "panic: %s", s);
-  for(;;)
-    ;
-}
-
 void timer_debug(){
-  flog(LOG_INFO, "Timer fired\n\r");
+  flog(LOG_INFO, "Timer fired");
 }
 
 int dev_int() {
@@ -63,7 +39,7 @@ int dev_int() {
         if (irq == UART0_IRQ) 
             uart_intr();
         else 
-            flog(LOG_WARN, "Unexpected interrupt: %d\n", irq);
+            flog(LOG_WARN, "Unexpected interrupt: %d", irq);
 
         if (irq)
             plic_complete(irq);
@@ -85,7 +61,7 @@ int dev_int() {
 extern "C" void sInterruptHandler(){
 
     if ((readSSTATUS() & SSTATUS_SPP) != 0) 
-        panic("usertrap: not from user mode");
+        fpanic("usertrap: not from user mode");
 
     //Imposta il trap vector all'handler 
     //per il kernel
@@ -93,11 +69,11 @@ extern "C" void sInterruptHandler(){
 
     //Salva l'indirizzo a cui si deve tornare
     //al termine della gestione dell'int
-    esecuzione->trapframe->epc = readSEPC();
+    esecuzione->epc = readSEPC();
 
     if (readSCAUSE() == 8) {
         // syscall
-        esecuzione->trapframe->epc += 4;
+        esecuzione->epc += 4;
         enableSInterrupts();
 
         // system_call();
@@ -106,15 +82,10 @@ extern "C" void sInterruptHandler(){
         // OK
     }
     else {
-        flog(LOG_WARN, "unexpected scause=%p, pid=%p\n", readSCAUSE(), esecuzione->id);
-        flog(LOG_WARN, "sepc=%p, stval=%p\n", readSEPC(), readSTVAL());
+        flog(LOG_WARN, "unexpected scause=%p, pid=%p", readSCAUSE(), esecuzione->id);
+        flog(LOG_WARN, "sepc=%p, stval=%p", readSEPC(), readSTVAL());
         // TODO: distruggi il processo
     }
-
-    sInterruptReturn();
-}
-
-extern "C" void sInterruptReturn(){
 
     //Potremmo venire da codice che aveva precedentemente eseguito
     //in modalita' supervisor con le interruzioni abilitate.
@@ -123,24 +94,25 @@ extern "C" void sInterruptReturn(){
 
     //Ripristiniamo l'interrupt handler da usare al di fuori del kernel
     writeSTVEC((void*)s_trap);
-
-    // Prepariamo i valori di cui uservec avrà bisogno alla
-    // prossima trap nel kernel
-    esecuzione->trapframe->kernel_satp = readSATP();
-    esecuzione->trapframe->kernel_trap = (natq)sInterruptHandler;
-
-    //Indichiamo il livello utente come privilegio a cui tornare
-    clearSPreviousPrivilege();
-
-    //Abilitiamo interruzioni per l'utente al ritorno
-    setSPreviousInterruptEnable();
-
-    writeSEPC((void*)esecuzione->trapframe->epc);
-
-    // Informiamo trampoline.s su quale tabella delle pagine utente usare
-    // natq user_page = writeSATP(esecuzione->satp);
-
 }
+
+// extern "C" void sInterruptReturn(){
+//     // Prepariamo i valori di cui uservec avrà bisogno alla
+//     // prossima trap nel kernel
+//     //esecuzione->trapframe->kernel_satp = readSATP();
+//     //esecuzione->trapframe->kernel_trap = (natq)sInterruptHandler;
+
+//     //Indichiamo il livello utente come privilegio a cui tornare
+//     //clearSPreviousPrivilege();
+
+//     //Abilitiamo interruzioni per l'utente al ritorno
+//     //setSPreviousInterruptEnable();
+
+//     //writeSEPC((void*)esecuzione->trapframe->epc);
+
+//     // Informiamo trampoline.s su quale tabella delle pagine utente usare
+//     // natq user_page = writeSATP(esecuzione->satp);
+// }
 
 extern "C" void kInterruptHandler(){
     int epc = readSEPC();
@@ -148,15 +120,15 @@ extern "C" void kInterruptHandler(){
     int cause = readSCAUSE();
 
     if ((status & SSTATUS_SPP) == 0) 
-        panic("kerneltrap: not from supervisor mode");
+        fpanic("kerneltrap: not from supervisor mode");
     if ((status & SSTATUS_SIE) != 0)
-        panic("kerneltrap: interrupts enabled");
+        fpanic("kerneltrap: interrupts enabled");
     
     if (dev_int() == 0) {
         // Eccezione
-        flog(LOG_WARN, "scause=%p\n", readSCAUSE());
-        flog(LOG_WARN, "sepc=%p, stval=%p\n", readSEPC(), readSTVAL());
-        panic("kerneltrap");
+        flog(LOG_WARN, "scause=%p", readSCAUSE());
+        flog(LOG_WARN, "sepc=%p, stval=%p", readSEPC(), readSTVAL());
+        fpanic("kerneltrap");
     }
 
     // TEST: timer interrupts

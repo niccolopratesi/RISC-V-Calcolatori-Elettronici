@@ -118,11 +118,9 @@ T min(T a, T b)
 // dalla dalla libreria standard del C++). Si limitano a richiamare in
 // modo appropriato 'operator new' e 'operator delete', che devono
 // esssere definiti a parte.
-//void *operator new[](size_t s);
-//void *operator new[](size_t s, align_val_t a);
-//void operator delete(void *p, size_t s);
-//void operator delete[](void *p);
-//void operator delete[](void *p, size_t s);
+extern void *operator new(size_t s);
+extern void *operator new(size_t s, align_val_t a);
+extern void operator delete(void *p, unsigned long);
 
 // elf
 bool find_eh_frame(vaddr elf, vaddr& eh_frame, natq& eh_frame_len);
