@@ -65,7 +65,7 @@ void init_frame()
 	// primo frame di M2
 	paddr fine_M1 = allinea(reinterpret_cast<paddr>(&end), DIM_PAGINA);
     // primo frame libero
-    paddr fine_user = allinea(reinterpret_cast<paddr>(&__user_end), DIM_PAGINA);
+    paddr fine_user = allinea(reinterpret_cast<paddr>(&__user_end + DIM_USR_HEAP), DIM_PAGINA);
 	// numero di frame in M1 e indice di f in vdf
 	N_M1 = (fine_M1-0x80000000) / DIM_PAGINA;
 	// numero di frame in M2
@@ -98,6 +98,8 @@ void init_frame()
 			primo_frame_libero + j + 1;
 	}
 	vdf[primo_frame_libero + last].prossimo_libero = 0;
+
+	flog(LOG_INFO, "Numero di frame: %ld (M1) %ld (M2)", N_M1, N_M2);
 }
 
 // estrae un frame libero dalla lista, se non vuota
@@ -271,40 +273,15 @@ paddr trasforma(paddr root_tab, vaddr v)
 	// Ce ne accorgiamo perché il descrittore foglia ha il bit P a
 	// zero. In quel caso restituiamo 0, che per noi non è un
 	// indirizzo fisico valido.
-	tab_entry e = it.get_e();
+	tab_entry& e = it.get_e();
 	if (!(e & BIT_V))
 		return 0;
 
 	// se il percorso è completo calcoliamo la traduzione corrispondente.
 	// Si noti che non siamo necessariamente arrivati al livello 1, se
 	// c'era un bit PS settato lungo il percorso.
+	paddr p = extr_IND_FISICO(e);
 	int l = it.get_l();
 	natq mask = dim_region(l - 1) - 1;
-	return (e & ~mask) | (v & mask);
+	return (p & ~mask) | (v & mask);
 }
-
-///////////////////////////////////
-/*
-extern "C" void test_paginazione_c(){
-    // iizializziamo la parte M2
-	init_frame();
-
-	// creiamo le parti condivise della memoria virtuale di tutti i processi
-	// le parti sis/priv e usr/priv verranno create da crea_processo()
-	// ogni volta che si attiva un nuovo processo
-	paddr root_tab = alloca_tab();
-	if (!root_tab)
-		boot_printf("Errore allocazione tabella root");
-	// finestra di memoria, che corrisponde alla parte sis/cond
-	if(!crea_finestra_FM(root_tab))
-		boot_printf("Errore creazione finestra FM\n");
-
-	// Attivazione paginazione
-	writeSATP(root_tab);
-
-	// Successo!
-	printf("\nPaging enabled. Hi from Virtual Memory!\n\r");
-
-	flog(LOG_INFO, "Hello from flog");
-} 
-*/

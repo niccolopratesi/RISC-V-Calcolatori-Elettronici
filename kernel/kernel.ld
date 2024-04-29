@@ -225,7 +225,7 @@ SECTIONS
   }
 
   /* START OF USER MODULE */
-  .user          :
+  .user          : 
   {
     . = ALIGN(0x1000);
     PROVIDE (__user_start = .);
@@ -234,6 +234,8 @@ SECTIONS
     . = ALIGN(0x1000);
     PROVIDE (__user_etext = .);
 
+    . = ALIGN(0x1000);
+    PROVIDE (__user_data_start = .);
     KEEP(objs/user*.o(.srodata .srodata.*))
     . = ALIGN(16);
     KEEP(objs/user*.o(.rodata .rodata.*))
@@ -241,7 +243,10 @@ SECTIONS
     KEEP(objs/user*.o(.sdata .sdata.*))
     . = ALIGN(16);
     KEEP(objs/user*.o(.data .data.*))
-    . = ALIGN(16);
+    PROVIDE (__user_data_end = .);
+
+    . = ALIGN(0x1000);
+    PROVIDE (__user_bss_start = .);
     KEEP(objs/user*.o(dynsbss))
     KEEP(objs/user*.o(.sbss .sbss.*))
     KEEP(objs/user*.o(.scommon))

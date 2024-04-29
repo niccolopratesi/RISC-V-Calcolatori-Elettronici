@@ -92,7 +92,7 @@
 // ( costanti non modificabili
 #define MIN_PROC_ID		0
 #define MAX_PROC_ID		(MAX_PROC - 1)
-#define MAX_PRIORITY		0xFFFFFFFF
+#define MAX_PRIORITY		(MIN_EXT_PRIO - 1)
 #define MIN_PRIORITY		0x1
 #define MAX_EXT_PRIO		(MIN_EXT_PRIO + 0xFE)
 #define SEL_CODICE_SISTEMA	0x8

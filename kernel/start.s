@@ -64,4 +64,11 @@ start:
   ori a0, a0, 0x2
   csrw sie, a0
 
+  # Enable memory access at S-mode when BIT_U=1 
+  # Set the SUM bit (18) in sstatus 
+  csrr a0, sstatus
+  li a1, 0x40000
+  or a0, a0, a1
+  csrw sstatus, a0
+
   mret

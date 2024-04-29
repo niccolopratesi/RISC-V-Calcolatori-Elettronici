@@ -3,6 +3,7 @@
 #include "def.h"
 #include "plic.h"
 #include "proc.h"
+#include "vm.h"
 
 extern des_proc *esecuzione;
 extern des_proc init;
@@ -23,7 +24,7 @@ extern "C" void sInterruptReturn();
 extern "C" void clearSPreviousPrivilege();
 extern "C" void clearSSIP();
 extern "C" int readSSIP();
-extern "C" int readSATP();
+//extern "C" int readSATP();
 extern "C" void setSPreviousInterruptEnable();
 
 void timer_debug(){
@@ -37,7 +38,7 @@ int dev_int() {
         int irq = plic_claim();
 
         if (irq == UART0_IRQ) 
-            uart_intr();
+            /*uart_intr()*/;
         else 
             flog(LOG_WARN, "Unexpected interrupt: %d", irq);
 
@@ -119,8 +120,20 @@ extern "C" void kInterruptHandler(){
     int status = readSSTATUS();
     int cause = readSCAUSE();
 
-    if ((status & SSTATUS_SPP) == 0) 
-        fpanic("kerneltrap: not from supervisor mode");
+    // ecall from s-mode
+    if (cause == 9 || cause == 8) {
+        esecuzione->epc += 4;
+        if (esecuzione->contesto[I_A7] == 0) { // activate_p
+            c_activate_p((void(*)(natq))esecuzione->contesto[I_A0], esecuzione->contesto[I_A1], esecuzione->contesto[I_A2], esecuzione->contesto[I_A3]);
+        }
+        else {
+            c_terminate_p();
+        }
+        return;
+    }
+
+    // if ((status & SSTATUS_SPP) == 0) 
+    //    fpanic("kerneltrap: not from supervisor mode");
     if ((status & SSTATUS_SIE) != 0)
         fpanic("kerneltrap: interrupts enabled");
     

@@ -34,6 +34,51 @@ struct des_proc {
 	/// @}
 };
 
+/// @brief Indici delle copie dei registri nell'array contesto
+enum { I_RA, I_SP, I_GP, I_TP, I_T0, I_T1, I_T2, I_S0, I_S1,
+        I_A0, I_A1, I_A2, I_A3, I_A4, I_A5, I_A6, I_A7, 
+        I_S2, I_S3, I_S4, I_S5, I_S6, I_S7, I_S8, I_S9, I_S10, I_S11, 
+        I_T3, I_T4, I_T5, I_T6,  };
+
+
+extern des_proc *esecuzione;
+extern des_proc *esecuzione_precedente;
+extern natl processi;
+extern des_proc *pronti;
+
+natl crea_dummy();
+des_proc* crea_processo(void f(natq), natq a, int prio, char liv);
+extern "C" void c_activate_p(void f(natq), natq a, natl prio, natl liv);
+extern "C" void c_terminate_p(bool logms = true);
+extern "C" natl activate_p(void f(natq), natq a, natl prio, natl liv);
+extern "C" void terminate_p(bool logms = true);
+des_proc *des_p(natw id);
+void inserimento_lista(des_proc*& p_lista, des_proc* p_elem);
+des_proc* rimozione_lista(des_proc*& p_lista);
+extern "C" void inspronti();
+extern "C" void schedulatore(void);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // // Saved registers for kernel context switches.
 // struct context {

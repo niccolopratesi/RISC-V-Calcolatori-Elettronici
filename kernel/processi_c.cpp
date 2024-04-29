@@ -23,12 +23,6 @@ extern "C" void c_abort_p(bool selfdump = true);
 extern "C" [[noreturn]] void panic(const char* msg);
 /// @endcond
 
-/// @brief Indici delle copie dei registri nell'array contesto
-enum { I_RA, I_SP, I_GP, I_TP, I_T0, I_T1, I_T2, I_S0, I_S1,
-        I_A0, I_A1, I_A2, I_A3, I_A4, I_A5, I_A6, I_A7, 
-        I_S2, I_S3, I_S4, I_S5, I_S6, I_S7, I_S8, I_S9, I_S10, I_S11, 
-        I_T3, I_T4, I_T5, I_T6,  };
-
 /// Coda esecuzione (contiene sempre un solo elemento)
 des_proc* esecuzione;
 
@@ -81,7 +75,7 @@ des_proc* rimozione_lista(des_proc*& p_lista)
 }
 
 /// @brief Inserisce @ref esecuzione in testa alla lista @ref pronti
-extern "C" void inspronti()
+void inspronti()
 {
 	esecuzione->puntatore = pronti;
 	pronti = esecuzione;
@@ -92,7 +86,7 @@ extern "C" void inspronti()
  *  Il processo andrà effettivamente in esecuzione solo alla prossima
  *  `call carica_stato; iretq`
  */
-extern "C" void schedulatore(void)
+void schedulatore(void)
 {
 // poiché la lista è già ordinata in base alla priorità,
 // è sufficiente estrarre l'elemento in testa
@@ -106,10 +100,10 @@ extern "C" void schedulatore(void)
  *  @param id 	id del processo
  *  @return	descrittore di processo corrispondente
  */
-extern "C" des_proc* des_p(natw id)
+des_proc* des_p(natw id)
 {
 	if (id > MAX_PROC_ID)
-		fpanic("id %hu non valido (max %lu)", id, MAX_PROC_ID);
+		fpanic("id %d non valido (max %d)", id, MAX_PROC_ID);
 
 	return proc_table[id];
 }
@@ -135,6 +129,20 @@ void dummy(natq)
 		halt();
 	flog(LOG_INFO, "Shutdown");
 	end_program();
+}
+
+/*! @brief Crea il processo dummy
+ *  @return id del processo
+ */
+natl crea_dummy()
+{
+	des_proc* di = crea_processo(dummy, 0, DUMMY_PRIORITY, LIV_SISTEMA);
+	if (di == 0) {
+		flog(LOG_ERR, "Impossibile creare il processo dummy");
+		return 0xFFFFFFFF;
+	}
+	inserimento_lista(pronti, di);
+	return di->id;
 }
 
 
@@ -186,7 +194,7 @@ void rilascia_proc_id(natw id)
  */
 void init_root_tab(paddr dest)
 {
-	paddr pdir = esecuzione->satp;
+	paddr pdir = esecuzione->satp << 12;
 
 	// ci limitiamo a copiare dalla tabella radice corrente i puntatori
 	// alle tabelle di livello inferiore per tutte le parti condivise
@@ -294,9 +302,11 @@ des_proc* crea_processo(void f(natq), natq a, int prio, char liv)
 		goto err_rel_id;
 	init_root_tab(p->satp);
 
-	// per i processi utente è irrilevante
-	// per i processi sistema, disabilitiamo le interruzioni (da modificare per il modulo I/O)
-	p->spie = 0;
+	// indirizzo di salto alla funzione f
+	p->epc = reinterpret_cast<natq>(f);
+
+	// abilitiamo le interruzioni a livello supervisor
+	p->spie = 1;
 
 	// creazione della pila sistema
 	if (!crea_pila(p->satp, fin_sis_p, DIM_SYS_STACK, LIV_SISTEMA))
@@ -312,14 +322,15 @@ des_proc* crea_processo(void f(natq), natq a, int prio, char liv)
 		}
 
 		// Lo stack pointer del processo utente è inizializzato al fondo della pila utente
-		p->contesto[I_SP] = fin_utn_p;
+		// All'inizio la carica_stato si aspetta che sia salvato RA in cima alla pila utente
+		p->contesto[I_SP] = fin_utn_p - 2*sizeof(natq);
 
 		p->livello = LIV_UTENTE;
 
 		// dal momento che usiamo traduzioni diverse per le parti sistema/private
 		// di tutti i processi, possiamo inizializzare p->punt_nucleo con un
 		// indirizzo (virtuale) uguale per tutti i processi
-		p->punt_nucleo = fin_sis_p;
+		p->punt_nucleo = fin_sis_p - sizeof(natq);
 
 		//   tutti gli altri campi valgono 0
 	} else {
@@ -330,12 +341,16 @@ des_proc* crea_processo(void f(natq), natq a, int prio, char liv)
 		// pila sistema)
 
 		// inizializziamo il descrittore di processo
-		p->contesto[I_SP] = fin_sis_p;
+		// All'inizio la carica_stato si aspetta che sia salvato RA in cima alla pila utente
+		p->punt_nucleo = p->contesto[I_SP] = fin_sis_p - 2*sizeof(natq);
 
 		p->livello = LIV_SISTEMA;
 
 		// tutti gli altri campi valgono 0
 	}
+
+	// modifichiamo il paddr di root_tab per renderlo compatibile con il formato di satp
+	p->satp = (p->satp >> 12) | (9L << 60);
 
 	// informazioni di debug
 	p->corpo = f;
@@ -366,13 +381,13 @@ extern "C" void distruggi_pila_precedente();
  */
 void distruggi_processo(des_proc* p)
 {
-	paddr root_tab = p->satp;
+	paddr root_tab = p->satp << 12;
 	// la pila utente può essere distrutta subito, se presente
 	if (p->livello == LIV_UTENTE)
 		distruggi_pila(root_tab, fin_utn_p, DIM_USR_STACK);
 	// se p == esecuzione_precedente rimandiamo la distruzione alla
 	// carica_stato, altrimenti distruggiamo subito
-	ultimo_terminato = root_tab;
+	ultimo_terminato = readSATP();
 	if (p != esecuzione_precedente) {
 		// riporta anche ultimo_terminato a zero
 		distruggi_pila_precedente();
@@ -427,6 +442,8 @@ paddr ultimo_terminato;
  *  TRIE.
  */
 extern "C" void distruggi_pila_precedente() {
+	// in ultimo_terminato c'è satp, vogliamo root_tab
+	ultimo_terminato = ultimo_terminato << 12;
 	distruggi_pila(ultimo_terminato, fin_sis_p, DIM_SYS_STACK);
 	// ripuliamo la tabella radice (azione inversa di init_root_tab())
 	// in modo da azzerare il contatore delle entrate valide e passare
@@ -454,14 +471,14 @@ extern "C" void c_activate_p(void f(natq), natq a, natl prio, natl liv)
 	// non possiamo accettare una priorità minore di quella di dummy
 	// o maggiore di quella del processo chiamante
 	if (prio < MIN_PRIORITY || prio > esecuzione->precedenza) {
-		flog(LOG_WARN, "priorita' non valida: %u", prio);
+		flog(LOG_WARN, "Priorita' non valida: %d", prio);
 		c_abort_p();
 		return;
 	}
 
 	// controlliamo che 'liv' contenga un valore ammesso
 	if (liv != LIV_UTENTE && liv != LIV_SISTEMA) {
-		flog(LOG_WARN, "livello non valido: %u", liv);
+		flog(LOG_WARN, "livello non valido: %d", liv);
 		c_abort_p();
 		return;
 	}
@@ -483,10 +500,10 @@ extern "C" void c_activate_p(void f(natq), natq a, natl prio, natl liv)
 		processi++;
 		id = p->id;			// id del processo creato
 						// (allocato da crea_processo)
-		flog(LOG_INFO, "proc=%u entry=%p(%lu) prio=%u liv=%u", id, f, a, prio, liv);
+		flog(LOG_INFO, "proc=%d entry=%p(%ld) prio=%d liv=%d", id, f, a, prio, liv);
 	}
 
-	esecuzione->contesto[I_A1] = id;
+	esecuzione->contesto[I_A0] = id;
 }
 
 /// @brief Parte C++ della pritimiva terminate_p()
@@ -496,7 +513,7 @@ extern "C" void c_terminate_p(bool logmsg)
 	des_proc* p = esecuzione;
 
 	if (logmsg)
-		flog(LOG_INFO, "Processo %u terminato", p->id);
+		flog(LOG_INFO, "Processo %d terminato", p->id);
 	distruggi_processo(p);
 	processi--;
 	schedulatore();
@@ -525,8 +542,6 @@ extern "C" void c_abort_p(bool selfdump)
 	// 	process_dump(esecuzione, LOG_WARN);
 	// 	cleanup_self_dump();
 	// }
-	flog(LOG_WARN, "Processo %u abortito", p->id);
+	flog(LOG_WARN, "Processo %d abortito", p->id);
 	c_terminate_p(/* logmsg= */ false);
 }
-
-des_proc init;

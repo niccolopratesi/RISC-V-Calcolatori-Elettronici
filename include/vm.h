@@ -480,6 +480,7 @@ void unmap(paddr tab, vaddr begin, vaddr end, T& putpaddr)
 	}
 }
 
+extern natq num_frame_liberi;
 // Spazio utente
 #define TRAMPOLINE	(MAXVA - DIM_PAGINA)
 #define TRAPFRAME	(TRAMPOLINE - DIM_PAGINA)

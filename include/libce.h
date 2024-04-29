@@ -102,6 +102,82 @@ void apic_reset();
 extern "C" void reboot();
 void fpanic(const char *fmt, ...) __attribute__((noreturn));
 
+typedef unsigned long uintptr_t;
+
+/*! @brief Converte da intero a puntatore non void.
+ *
+ * L'intero deve essere allineato correttamente e deve poter essere contenuto
+ * in un puntatore (4 byte a 32 bit, 8 byte a 64 bit) In caso contrario la
+ * funzione chiama @ref fpanic().
+ *
+ * @tparam To	tipo degli oggetti puntati
+ * @tparam From	un tipo intero
+ * @param v 	valore (di tipo _From_) da convertire
+ * @return	puntatore a _To_
+ */
+template<typename To, typename From>
+static inline To* ptr_cast(From v)
+{
+	uintptr_t vp = static_cast<uintptr_t>(v);
+
+	if (vp & (alignof(To) - 1)) {
+		fpanic("Conversione di %llx a puntatore: non allineato a %zu",
+				static_cast<unsigned long long>(v), alignof(To));
+	}
+
+	if (vp != v) {
+		fpanic("Conversione di %llx a puntatore: perdita di precisione",
+				static_cast<unsigned long long>(v));
+	}
+
+	return reinterpret_cast<To*>(vp);
+}
+
+/*! @brief Converte da intero a puntatore a void.
+ *
+ * L'intero deve poter essere contenuto in un puntatore (4 byte a 32 bit, 8
+ * byte a 64 bit) In caso contrario la funzione chiama @ref fpanic().
+ *
+ * @tparam From un tipo intero
+ * @param v 	valore (di tipo _From_) da convertire
+ * @return	puntatore a void
+ */
+template<typename From>
+static inline void* voidptr_cast(From v)
+{
+	uintptr_t vp = static_cast<uintptr_t>(v);
+
+	if (vp != v) {
+		fpanic("Conversione di %llu a puntatore: perdita di precisione",
+				static_cast<unsigned long long>(v));
+	}
+
+	return reinterpret_cast<void*>(vp);
+}
+
+/*! @brief Converte da puntatore a intero.
+ *
+ * Il tipo _To_ deve essere sufficientemente grande per contenere l'indirizzo.
+ * In caso contrario la funzione chiama @ref fpanic().
+ *
+ * @tparam To	un tipo intero
+ * @tparam From tipo degli oggetti puntati
+ * @param p	puntatore da convertire
+ * @return	valore di _p_ convertito a intero
+ */
+template<typename To, typename From>
+static inline To int_cast(From* p)
+{
+	uintptr_t vp = reinterpret_cast<uintptr_t>(p);
+	To v = static_cast<To>(vp);
+
+	if (vp != v) {
+		fpanic("Conversione di %p a intero: perdita di precisione", p);
+	}
+
+	return v;
+}
+
 template<typename T>
 T max(T a, T b)
 {

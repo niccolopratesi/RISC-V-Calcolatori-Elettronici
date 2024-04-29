@@ -74,6 +74,7 @@ salva_stato:
 	# usiamo a1 come appoggio per copiare il vecchio a0
 	ld a1, 8(sp)
 	sd a1, A0(a0)
+	# la funzione che ha invocato salva_stato ha salvato RA sullo stack, poiché sovrascritto nella chiamata a funzione
 	# salviamo il valore che sp aveva prima della chiamata a salva stato
 	mv a1, sp
 	addi a1, a1, 16
@@ -84,7 +85,7 @@ salva_stato:
 	ld a1, 16(sp)
 	sd a1, RA(a0)
 	# copiamo gli altri registri
-	sd gp, GP(a0)
+	#sd gp, GP(a0)
 	sd tp, TP(a0)
 	sd t0, T0(a0)
 	sd t1, T1(a0)
@@ -129,16 +130,18 @@ salva_stato:
 	.cfi_restore a0
 	addi sp, sp, 16
 
-	# CAMBIO
-	# in x86 rsp salta a tss_punt_nucleo, in RISC-V sp punta ancora alla pila del processo
-	# salviamo a0 in sscratch per poterlo usare come puntatore al des_proc
-	# salviamo sp nel contesto e carichiamo il puntatore alla pila del sistema
-	csrw sscratch, a0
+	# se il processo gira a livello sistema non devo fare altro
+	# se il processo gira a livello utente devo spostare sp alla pila sistema
 	ld a0, esecuzione
-	# ld sp, PUNT_NUCLEO(a0)
-	# ripristiniamo a0
-	csrr a0, sscratch
+	lh a1, LIVELLO(a0)
+	bne a1, zero, 1f
 
+	# CAMBIO
+	# in x86 rsp salta automaticamente a tss_punt_nucleo, in RISC-V sp punta ancora alla pila utente del processo
+	# salviamo a0 in sscratch per poterlo usare come puntatore al des_proc
+	# carichiamo il puntatore alla pila del sistema in sp
+	ld sp, PUNT_NUCLEO(a0)
+1:
 	ret # jr ra: Indirizzo di ritorno salvato in ra
 	.cfi_endproc
 
@@ -149,11 +152,11 @@ salva_stato:
 carica_stato:
 	.cfi_startproc
 
-	# Carica l'indirizzo del contesto in a0 per usarlo come base
-	ld a0, esecuzione # RBX
+	# Carica l'indirizzo del contesto in s0 per usarlo come base (preservato)
+	ld s0, esecuzione # RBX
 
 	# CAMBIO: Cambio paginazione
-	ld a1, SATP(a0)
+	ld a1, SATP(s0)
 	csrr a2, satp
 	# se satp e SATP nel des_proc sono lo stesso, non invalido il tlb
 	beq a1, a2, 1f
@@ -166,10 +169,17 @@ carica_stato:
 	sfence.vma zero, zero
 
 1:
+	# carica_stato si aspetta che sp punti alla pila sistema di esecuzione_precedente
+	# Spostiamo sp alla base della pila sistema di esecuzione
+	ld sp, PUNT_NUCLEO(s0) 
 
-	# Ripristiniamo pila vecchia
-	ld sp, SP(a0) 
+	# Se esecuzione gira a livello sistema, sopra a punt_nucleo c'è il RA salvato da salva_stato
+	lh a1, LIVELLO(s0)
+	beqz a1, 1f
+	# decrementiamo sp di 8 per farlo puntare al RA salvato da salva_stato
+	addi sp, sp, -8
 
+1:
 	# se il processo precedente era terminato o abortito la sua pila
 	# sistema non era stata distrutta, in modo da permettere a noi di
 	# continuare ad usarla. Ora che abbiamo cambiato pila possiamo
@@ -192,11 +202,11 @@ carica_stato:
 	### in x86 alcune informazioni sono salvate in pila e gestite dalle iretq, in risc-v vanno aggiornate manualmente
 	
 	## Carichiamo in sepc l'indirizzo di ritorno salvato nel des_proc
-	ld a1, EPC(a0)
+	ld a1, EPC(s0)
 	csrw sepc, a1
 	
 	## Settiamo sstaus.spp a 0 se il processo è utente, 1 se è sistema
-	lw a1, LIVELLO(a0)
+	lh a1, LIVELLO(s0)
 	# Salviamo il contenuto attuale di RA per non farcelo sovrascrivere dalla call
 	addi sp, sp, -8
 	sd ra, 0(sp)
@@ -214,7 +224,7 @@ carica_stato:
 
 
 	## Settiamo sstatus.spie al valore salvato nel des_proc
-	lw a1, SPIE(a0)
+	lw a1, SPIE(s0)
 	# Salviamo il contenuto attuale di RA per non farcelo sovrascrivere dalla call
 	addi sp, sp, -8
 	sd ra, 0(sp)
@@ -235,40 +245,48 @@ carica_stato:
 	# salva_stato sposta manualmente sp a punt_nucleo
 
 	# Ripristiniamo i registri
-	ld gp, GP(a0)
-	ld tp, TP(a0)
-	ld t0, T0(a0)
-	ld t1, T1(a0)
-	ld t2, T2(a0)
-	ld s0, S0(a0)
-	ld s1, S1(a0)
-	ld a2, A2(a0)
-	ld a3, A3(a0)
-	ld a4, A4(a0)
-	ld a5, A5(a0)
-	ld a6, A6(a0)
-	ld a7, A7(a0)
-	ld s2, S2(a0)
-	ld s3, S3(a0)
-	ld s4, S4(a0)
-	ld s5, S5(a0)
-	ld s6, S6(a0)
-	ld s7, S7(a0)
-	ld s8, S8(a0)
-	ld s9, S9(a0)
-	ld s10, S10(a0)
-	ld s11, S11(a0)
-	ld t3, T3(a0)
-	ld t4, T4(a0)
-	ld t5, T5(a0)
-	ld t6, T6(a0)
-	# TEST:
-	# ld t5, RA(a0)
-	# Ripristiniamo a0 e a1
-	ld a1, A1(a0)
-	ld a0, A0(a0)
+	#ld gp, GP(s0)
+	ld tp, TP(s0)
+	ld t0, T0(s0)
+	ld t1, T1(s0)
+	ld t2, T2(s0)
+	ld s1, S1(s0)
+	ld a1, A1(s0)
+	ld a2, A2(s0)
+	ld a3, A3(s0)
+	ld a4, A4(s0)
+	ld a5, A5(s0)
+	ld a6, A6(s0)
+	ld a7, A7(s0)
+	ld s2, S2(s0)
+	ld s3, S3(s0)
+	ld s4, S4(s0)
+	ld s5, S5(s0)
+	ld s6, S6(s0)
+	ld s7, S7(s0)
+	ld s8, S8(s0)
+	ld s9, S9(s0)
+	ld s10, S10(s0)
+	ld s11, S11(s0)
+	ld t3, T3(s0)
+	ld t4, T4(s0)
+	ld t5, T5(s0)
+	ld t6, T6(s0)
+	
+	# Nel contesto, sp punta a RA (che è stato salvato in pila) a prescindere dal livello di esecuzione
+	ld sp, SP(s0)
+
+	# Ripristiniamo s0
+	ld s0, S0(s0)
 
 	ret 
+	.cfi_endproc
+
+.global salta_a_main
+salta_a_main:
+	.cfi_startproc
+	call carica_stato
+	sret
 	.cfi_endproc
 
 # Clear S Previous Privilege mode (User mode)
@@ -337,5 +355,17 @@ halt:
 end_program:
 	call reboot
 	call halt
+	ret
+	
+.global activate_p
+activate_p:
+	li a7, 0
+	ecall
+	ret
+
+.global terminate_p
+terminate_p:
+	li a7, 1
+	ecall
 	ret
 	

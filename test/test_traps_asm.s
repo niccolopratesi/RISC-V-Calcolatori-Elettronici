@@ -20,7 +20,6 @@ s_trap:
     addi sp,sp,-8
     sd ra,0(sp)
     call salva_stato
-    addi sp,sp,8
 
     call sInterruptHandler
 

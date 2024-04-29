@@ -132,8 +132,8 @@ $(ODIR)/%.o: libCE/as/%.s
 
 
 
-$K/kernel: $(OBJS) $(PRODOBJS) $(LIBCE_OBJECTS) $(HEADERS) $K/kernel.ld
-	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $K/kernel $(OBJS) $(PRODOBJS) $(LIBCE_OBJECTS)
+$K/kernel: $(OBJS) $(USEROBJS) $(PRODOBJS) $(LIBCE_OBJECTS) $(HEADERS) $K/kernel.ld $(ODIR)/test_traps_asm.o $(ODIR)/test_traps_c.o
+	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $K/kernel $(OBJS) $(PRODOBJS) $(USEROBJS) $(LIBCE_OBJECTS) $(ODIR)/test_traps_asm.o $(ODIR)/test_traps_c.o
 
 $T/kernel_test: $(OBJS) $(TESTOBJS) $(LIBCE_OBJECTS) $(HEADERS) $K/kernel.ld
 	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $T/kernel_test $(OBJS) $(TESTOBJS) $(LIBCE_OBJECTS)
