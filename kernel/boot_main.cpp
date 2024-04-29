@@ -93,7 +93,7 @@ extern "C" int boot_main(){
 	esecuzione = &init;
 	esecuzione_precedente = esecuzione;
 
-	flog(LOG_INFO, "Nucleo di Calcolatori Elettronici, v7.1.1");
+	flog(LOG_INFO, "Nucleo di Calcolatori Elettronici - Risc-V");
 
 	// Usiamo come heap la parte di memoria comresa tra __heap_start e __heap_start + HEAP_SIZE
   heap_start = allinea(reinterpret_cast<void*>(&__heap_start), DIM_PAGINA);

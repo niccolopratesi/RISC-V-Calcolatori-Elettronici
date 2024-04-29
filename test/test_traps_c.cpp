@@ -1,6 +1,6 @@
 #include "libce.h"
 #include "uart.h"
-#include "def.h"
+#include "traps.h"
 #include "plic.h"
 #include "proc.h"
 #include "vm.h"
