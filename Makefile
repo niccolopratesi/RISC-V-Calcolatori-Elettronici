@@ -55,7 +55,7 @@ CFLAGS += -Iinclude
 CXXFLAGS = -Wall
 CXXFLAGS += -O0
 CXXFLAGS += -ggdb
-CXXFLAGS += -fpic
+CXXFLAGS += -fno-pic
 CXXFLAGS += -mcmodel=medany
 CXXFLAGS += -Iinclude
 CXXFLAGS += -fno-exceptions
