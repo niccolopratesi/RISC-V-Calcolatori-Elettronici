@@ -157,6 +157,7 @@ error:
 ///
 /// @note Inizializzato da crea_spazio_condiviso().
 void (*user_entry)(natq);
+extern void test_keyboard_c();
 
 /// @brief Corpo del processo main_sistema
 void main_sistema(natq)
@@ -169,6 +170,8 @@ void main_sistema(natq)
 		flog(LOG_ERR, "impossibile creare il processo main utente");
 		goto error;
 	}
+
+	test_keyboard_c();
 
 	// terminazione
 	flog(LOG_INFO, "Cedo il controllo al processo main utente...");

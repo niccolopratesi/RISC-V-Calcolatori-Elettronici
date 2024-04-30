@@ -1,5 +1,6 @@
 #include "libce.h"
 #include "uart.h"
+#include "keyboard.h"
 
 extern "C" int readSSIP();
 
@@ -127,7 +128,7 @@ void read_string() {
 
 }
 
-extern "C" void test_keyboard_c(){
+void test_keyboard_c(){
 
 	uart_init();
 
