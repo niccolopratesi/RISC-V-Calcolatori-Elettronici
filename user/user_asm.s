@@ -1,3 +1,10 @@
+.global _start, start
+_start:
+start:
+	nop
+    nop
+    ret
+
 .globl func
 func:
     nop

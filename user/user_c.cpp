@@ -1,5 +1,5 @@
 #include "tipo.h"
-#include "libce.h"
+//#include "libce.h"
 #include "costanti.h"
 
 char c = 'a';
@@ -13,7 +13,7 @@ extern "C" void funzione(natq i) {
     u_terminate_p();
 }
 
-extern "C" void __attribute__((section(".main"))) main() {
+extern "C" void /*__attribute__((section(".main")))*/ main() {
     int a;
     int b = 13;
     c = 'b';

@@ -133,13 +133,19 @@ $(ODIR)/%.o: libCE/as/%.s
 
 
 $K/kernel: $(OBJS) $(USEROBJS) $(PRODOBJS) $(LIBCE_OBJECTS) $(HEADERS) $K/kernel.ld $(ODIR)/test_traps_asm.o $(ODIR)/test_traps_c.o
-	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $K/kernel $(OBJS) $(PRODOBJS) $(USEROBJS) $(LIBCE_OBJECTS) $(ODIR)/test_traps_asm.o $(ODIR)/test_traps_c.o
+	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $K/kernel $(OBJS) $(PRODOBJS) $(LIBCE_OBJECTS) $(ODIR)/test_traps_asm.o $(ODIR)/test_traps_c.o
+	$(LD) $(LDFLAGS) -Ttext 0xffff800000000000 -o $U/user_elf $(USEROBJS)
 
 $T/kernel_test: $(OBJS) $(TESTOBJS) $(LIBCE_OBJECTS) $(HEADERS) $K/kernel.ld
 	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $T/kernel_test $(OBJS) $(TESTOBJS) $(LIBCE_OBJECTS)
 
+# $U/user_test: $(OBJS) $(TESTOBJS) $(USEROBJS) $(LIBCE_OBJECTS) $(HEADERS) $K/kernel.ld
+# 	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $U/user_test $(OBJS) $(TESTOBJS) $(USEROBJS) $(LIBCE_OBJECTS)
+
 $U/user_test: $(OBJS) $(TESTOBJS) $(USEROBJS) $(LIBCE_OBJECTS) $(HEADERS) $K/kernel.ld
-	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $U/user_test $(OBJS) $(TESTOBJS) $(USEROBJS) $(LIBCE_OBJECTS)
+	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $U/user_test $(OBJS) $(TESTOBJS) $(LIBCE_OBJECTS)
+	
+
 
 compile: $K/kernel
 
@@ -147,7 +153,7 @@ run: $K/kernel
 	$(RUN) -kernel $K/kernel
 
 debug: $K/kernel
-	$(DEBUG) -kernel $K/kernel
+	$(DEBUG) -kernel $K/kernel -initrd $U/user_elf
 
 test: $T/kernel_test
 	$(RUN) -kernel $T/kernel_test
@@ -156,7 +162,7 @@ test_debug: $T/kernel_test
 	$(DEBUG) -kernel $T/kernel_test
 
 test_user: $U/user_test
-	$(RUN) -kernel $U/user_test
+	$(RUN) -kernel $U/user_test -initrd $U/user_elf
 
 test_user_debug: $U/user_test
 	$(DEBUG) -kernel $U/user_test
