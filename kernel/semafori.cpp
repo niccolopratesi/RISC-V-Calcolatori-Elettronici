@@ -1,3 +1,8 @@
+#include "libce.h"
+#include "proc.h"
+#include "costanti.h"
+#include "vm.h"
+
 /// @brief Descrittore di semaforo
 struct des_sem {
 	/// se >= 0, numero di gettoni contenuti;
@@ -14,19 +19,11 @@ struct des_sem {
 des_sem array_dess[MAX_SEM * 2];
 
 /*! @brief Restituisce il livello a cui si trovava il processore al momento
- *  in cui è stata invocata la primitiva.
- *
- *  @warning funziona solo nelle routine di risposta ad una interruzione
- *  (INT, esterna o eccezione) se è stata chiamata `salva_stato`.
+ *  in cui è stata invocata la primitiva.`.
  */
 int liv_chiamante()
 {
-	// salva_stato ha salvato il puntatore alla pila sistema
-	// subito dopo l'invocazione della INT
-	natq* pila = ptr_cast<natq>(esecuzione->contesto[I_RSP]);
-	// la seconda parola dalla cima della pila contiene il livello
-	// di privilegio che aveva il processore prima della INT
-	return pila[1] == SEL_CODICE_SISTEMA ? LIV_SISTEMA : LIV_UTENTE;
+	return esecuzione->livello;
 }
 
 /// Numero di semafori allocati per il livello utente
@@ -88,7 +85,7 @@ extern "C" void c_sem_ini(int val)
 	if (i != 0xFFFFFFFF)
 		array_dess[i].counter = val;
 
-	esecuzione->contesto[I_RAX] = i;
+	esecuzione->contesto[I_A0] = i;
 }
 
 /*! @brief Parte C++ della primitiva sem_wait().
@@ -98,7 +95,7 @@ extern "C" void c_sem_wait(natl sem)
 {
 	// una primitiva non deve mai fidarsi dei parametri
 	if (!sem_valido(sem)) {
-		flog(LOG_WARN, "semaforo errato: %u", sem);
+		flog(LOG_WARN, "semaforo errato: %d", sem);
 		c_abort_p();
 		return;
 	}
@@ -119,7 +116,7 @@ extern "C" void c_sem_signal(natl sem)
 {
 	// una primitiva non deve mai fidarsi dei parametri
 	if (!sem_valido(sem)) {
-		flog(LOG_WARN, "semaforo errato: %u", sem);
+		flog(LOG_WARN, "semaforo errato: %d", sem);
 		c_abort_p();
 		return;
 	}

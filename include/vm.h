@@ -252,6 +252,11 @@ extern void dec_ref(paddr);
 /// invocata per leggere il contatore delle entrate valide di una tabella
 extern natl get_ref(paddr);
 
+/// Parte C++ della primitiva access()
+extern "C" bool c_access(vaddr begin, natq dim, bool writeable, bool shared = true);
+/// Parte C++ della primitiva trasforma()
+extern "C" void c_trasforma(vaddr ind_virt);
+
 // crea la finestra di memoria
 extern bool crea_finestra_FM(paddr root_tab);
 
@@ -475,8 +480,5 @@ void unmap(paddr tab, vaddr begin, vaddr end, T& putpaddr)
 }
 
 extern natq num_frame_liberi;
-// Spazio utente
-#define TRAMPOLINE	(MAXVA - DIM_PAGINA)
-#define TRAPFRAME	(TRAMPOLINE - DIM_PAGINA)
 
 #endif

@@ -1,5 +1,6 @@
 #include "libce.h"
 #include "vm.h"
+#include "proc.h"
 #include "costanti.h"
 #include "uart.h"
 
@@ -210,6 +211,55 @@ bool in_utn_c(vaddr v)
 {
 	return v >= ini_utn_c && v < fin_utn_c;
 }
+
+/*! @brief Parte C++ della primitiva access()
+ *
+ *  Primitiva utilizzata dal modulo I/O per controllare che i buffer passati dal
+ *  livello utente siano accessibili dal livello utente (problema del Cavallo di
+ *  Troia) e non possano causare page fault nel modulo I/O (bit P tutti a 1 e
+ *  scrittura permessa quando necessario).
+ *
+ *  @param begin	base dell'intervallo da controllare
+ *  @param dim		dimensione dell'intervallo da controllare
+ *  @param writeable	se true, l'intervallo deve essere anche scrivibile
+ *  @param shared	se true, l'intevallo deve trovarsi in utente/condivisa
+ *  @return		true se i vincoli sono rispettati, false altrimenti
+ */
+extern "C" bool c_access(vaddr begin, natq dim, bool writeable, bool shared)
+{
+	esecuzione->contesto[I_A0] = false;
+
+	if (!tab_iter::valid_interval(begin, dim))
+		return false;
+
+	if (shared && (!in_utn_c(begin) || (dim > 0 && !in_utn_c(begin + dim - 1))))
+		return false;
+
+	// usiamo un tab_iter per percorrere tutto il sottoalbero relativo
+	// alla traduzione degli indirizzi nell'intervallo [begin, begin+dim).
+	for (tab_iter it(esecuzione->satp << 12, begin, dim); it; it.next()) {
+		tab_entry e = it.get_e();
+
+		// interrompiamo il ciclo non appena troviamo qualcosa che non va
+		if (!(e & BIT_V) || !(e & BIT_U) || (writeable && !(e & BIT_W)))
+			return false;
+	}
+	esecuzione->contesto[I_A0] = true;
+	return true;
+}
+
+/*! @brief Parte C++ della primitiva trasforma()
+ *
+ *  Traduce _ind_virt_ usando il TRIE del processo puntato
+ *  da @ref esecuzione.
+ *
+ *  @param ind_virt indirizzo virtuale da tradurre
+ */
+extern "C" void c_trasforma(vaddr ind_virt)
+{
+	esecuzione->contesto[I_A0] = trasforma(esecuzione->satp << 12, ind_virt);
+}
+/// @}
 
 // mappa la memoria fisica in memoria virtuale, inclusa l'area PCI
 bool crea_finestra_FM(paddr root_tab)

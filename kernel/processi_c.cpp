@@ -15,10 +15,6 @@ des_proc* proc_table[MAX_PROC];
 /// Numero di processi utente attivi.
 natl processi;
 
-/// @cond
-// (forward) Distrugge il processo puntato da esecuzione.
-extern "C" void c_abort_p(bool selfdump = true);
-
 // (forward) Ferma tutto il sistema (in caso di bug nel sistema stesso)
 extern "C" [[noreturn]] void panic(const char* msg);
 /// @endcond
