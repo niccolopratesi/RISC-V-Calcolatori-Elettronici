@@ -358,16 +358,6 @@ vaddr carica_modulo(natq mod_start, paddr root_tab, natq flags, natq heap_size)
  */
 vaddr carica_utente(paddr root_tab)
 {
-//   mod_info mod;
-
-//   mod.text_start = reinterpret_cast<paddr>(&__user_start);
-//   mod.text_end = reinterpret_cast<paddr>(&__user_etext);
-//   mod.data_start = reinterpret_cast<paddr>(&__user_data_start);
-//   mod.data_end = reinterpret_cast<paddr>(&__user_data_end);
-//   mod.bss_start = reinterpret_cast<paddr>(&__user_bss_start);
-//   mod.bss_end = reinterpret_cast<paddr>(&__user_end);
-//   mod.virt_beg = ini_utn_c;
-
 	flog(LOG_INFO, "mappo il modulo utente:");
 	return carica_modulo(USER_MOD_START, root_tab, BIT_U, DIM_USR_HEAP);
 }
