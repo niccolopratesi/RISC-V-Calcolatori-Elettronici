@@ -36,14 +36,14 @@
 
 // ( tipi delle primitive
 //   ( comuni
-#define TIPO_A			0x20	// activate_p
-#define TIPO_T			0x21	// terminate_p
-#define TIPO_SI			0x22	// sem_ini
-#define TIPO_W			0x23	// sem_wait
-#define TIPO_S			0x24	// sem_signal
-#define TIPO_D			0x25	// delay
-#define TIPO_L			0x26	// log
-#define TIPO_GMI		0x27	// getmeminfo (debug)
+#define TIPO_A			0x00	// activate_p
+#define TIPO_T			0x01	// terminate_p
+#define TIPO_SI			0x02	// sem_ini
+#define TIPO_W			0x03	// sem_wait
+#define TIPO_S			0x04	// sem_signal
+#define TIPO_D			0x05	// delay
+#define TIPO_L			0x06	// log
+#define TIPO_GMI		0x07	// getmeminfo (debug)
 //   )
 //   ( riservate per il modulo I/O
 #define TIPO_APE		0x30	// activate_pe
@@ -65,9 +65,6 @@
 #define IO_TIPO_GMI		0x47	// getiomeminfo
 //   )
 // )
-
-// tipo del driver del timer (priorità massima)
-#define TIPO_TIMER		0xFE
 
 // ( suddivisione della memoria virtuale
 //   N    = Numero di entrate in root_tab
@@ -98,9 +95,6 @@
 #define MAX_PRIORITY		(MIN_EXT_PRIO - 1)
 #define MIN_PRIORITY		0x1
 #define MAX_EXT_PRIO		(MIN_EXT_PRIO + 0xFE)
-#define SEL_CODICE_SISTEMA	0x8
-#define SEL_CODICE_UTENTE	0x13
-#define SEL_DATI_UTENTE 	0x1b
 #define LIV_UTENTE		    0
 #define LIV_SISTEMA         1
 #define LIV_MACCHINA        3
