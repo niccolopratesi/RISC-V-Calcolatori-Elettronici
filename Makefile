@@ -1,21 +1,10 @@
 K=kernel
 U=user
-T=test
 I=include
 ODIR=objs
 
 _OBJS = $(patsubst $(K)/%.c,%.o,$(wildcard $(K)/*.c)) $(patsubst $(K)/%.s,%.o,$(wildcard $(K)/*.s)) $(patsubst $(K)/%.cpp,%.o,$(wildcard $(K)/*.cpp))
-_OBJS := $(filter-out boot_main.o, $(_OBJS))
-
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
-
-_PRODOBJS = \
-  boot_main.o \
-
-PRODOBJS = $(patsubst %,$(ODIR)/%,$(_PRODOBJS))
-  
-_TESTOBJS = $(patsubst $(T)/%.c,%.o,$(wildcard $(T)/*.c)) $(patsubst $(T)/%.s,%.o,$(wildcard $(T)/*.s)) $(patsubst $(T)/%.cpp,%.o,$(wildcard $(T)/*.cpp))
-TESTOBJS = $(patsubst %,$(ODIR)/%,$(_TESTOBJS))
 
 _USEROBJS = $(patsubst $(U)/%.c,%.o,$(wildcard $(U)/*.c)) $(patsubst $(U)/%.s,%.o,$(wildcard $(U)/*.s)) $(patsubst $(U)/%.cpp,%.o,$(wildcard $(U)/*.cpp))
 USEROBJS = $(patsubst %,$(ODIR)/%,$(_USEROBJS))
@@ -114,15 +103,6 @@ $(ODIR)/%.o: $K/%.cpp
 $(ODIR)/%.o: $K/%.s
 	$(AS) $(ASFLAGS) $< -o $@
 
-$(ODIR)/%.o: $T/%.c
-	$(CC) -c $(CFLAGS) $< -o $@
-
-$(ODIR)/%.o: $T/%.cpp
-	$(CXX) -c $(CXXFLAGS) $< -o $@
-
-$(ODIR)/%.o: $T/%.s
-	$(AS) $(ASFLAGS) $< -o $@
-
 $(ODIR)/%.o: $U/%.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
@@ -145,15 +125,8 @@ STARTUSER = 0xffff800000001000
 $(I)/libce.a: $(LIBCE_OBJECTS) $(HEADERS)
 	$(TOOLPREFIX)ar rcs $@ $(LIBCE_OBJECTS)
 
-$K/kernel: $(OBJS) $(PRODOBJS) $(HEADERS) $(I)/libce.a $K/kernel.ld $(ODIR)/test_traps_asm.o $(ODIR)/test_traps_c.o
-	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $K/kernel $(OBJS) $(PRODOBJS) $(ODIR)/test_traps_asm.o $(ODIR)/test_traps_c.o $(LDLIBS)
-
-
-$T/kernel_test: $(OBJS) $(TESTOBJS) $(LIBCE_OBJECTS) $(HEADERS) $K/kernel.ld
-	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $T/kernel_test $(OBJS) $(TESTOBJS) $(LIBCE_OBJECTS)
-
-$U/user_test: $(OBJS) $(TESTOBJS) $(USEROBJS) $(LIBCE_OBJECTS) $(HEADERS) $K/kernel.ld
-	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $U/user_test $(OBJS) $(TESTOBJS) $(USEROBJS) $(LIBCE_OBJECTS)
+$K/kernel: $(OBJS) $(HEADERS) $(I)/libce.a $K/kernel.ld
+	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $K/kernel $(OBJS) $(LDLIBS)
 
 $U/user: $(USEROBJS) $(HEADERS) $(I)/libce.a
 	$(LD) $(LDFLAGS) -Ttext $(STARTUSER) -o $@ $(USEROBJS) $(LDLIBS)
@@ -169,18 +142,6 @@ run: $K/kernel $U/user.strip
 
 debug: $K/kernel $U/user.strip
 	$(DEBUG) -kernel $K/kernel -initrd $U/user.strip
-
-test: $T/kernel_test
-	$(RUN) -kernel $T/kernel_test
-
-test_debug: $T/kernel_test
-	$(DEBUG) -kernel $T/kernel_test
-
-test_user: $U/user_test
-	$(RUN) -kernel $U/user_test -initrd $U/user_elf
-
-test_user_debug: $U/user_test
-	$(DEBUG) -kernel $U/user_test
 
 clean:
 	rm -f $(ODIR)/*.o $K/kernel $T/kernel_test $U/user_test $(I)/lib*.a

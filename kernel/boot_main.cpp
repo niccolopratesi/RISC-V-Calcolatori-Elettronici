@@ -171,7 +171,8 @@ void main_sistema(natq)
 		goto error;
 	}
 
-	test_keyboard_c();
+	// // TEST
+	// test_keyboard_c();
 
 	// terminazione
 	flog(LOG_INFO, "Cedo il controllo al processo main utente...");
@@ -314,10 +315,9 @@ vaddr carica_modulo(natq mod_start, paddr root_tab, natq flags, natq heap_size)
 			copy_segment{mod_beg, mod_end, virt_beg}) != virt_end)
 			return 0;
 
-		flog(LOG_INFO, " - segmento %s %s %s mappato a [%lx, %lx)",
+		flog(LOG_INFO, " - segmento %s %s mappato a [%lx, %lx)",
 				(map_flags & BIT_U) ? "utente " : "sistema",
 				(map_flags & BIT_W) ? "read/write" : "read-only ",
-				(map_flags & BIT_X) ? "exec" : "noexec",
 				virt_beg, virt_end);
 
 		// passiamo alla prossima entrata della tabella dei segmenti
