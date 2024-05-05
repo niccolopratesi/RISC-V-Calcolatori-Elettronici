@@ -72,11 +72,11 @@ CXXFLAGS += -nostdlib
 
 ASFLAGS = 		\
 	-ggdb 		\
-	-fpic
+	-fpic		\
 
 LDFLAGS = 		\
 	-nostdlib	\
-	-L$(I)		
+	-L$(I)		\
 
 LDLIBS = -lce
 
