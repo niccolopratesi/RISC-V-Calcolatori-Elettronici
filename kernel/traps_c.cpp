@@ -1,39 +1,22 @@
 #include "libce.h"
+#include "costanti.h"
 #include "uart.h"
 #include "traps.h"
 #include "plic.h"
 #include "proc.h"
-#include "vm.h"
-
-extern des_proc *esecuzione;
-extern des_proc init;
-extern des_proc *esecuzione_precedente;
-
-extern "C" void s_trap();
-extern "C" void k_trap();
-extern "C" void writeSTVEC(void*);
-extern "C" void writeSEPC(void*);
-extern "C" natq readSEPC();
-extern "C" int readSCAUSE();
-extern "C" int readSTVAL();
-extern "C" int readSTVEC();
-extern "C" int readSSTATUS();
-extern "C" void disableSInterrupts();
-extern "C" void enableSInterrupts();
-extern "C" void sInterruptReturn();
-extern "C" void clearSPreviousPrivilege();
-extern "C" void clearSSIP();
-extern "C" int readSSIP();
-//extern "C" int readSATP();
-extern "C" void setSPreviousInterruptEnable();
 
 void timer_debug(){
   flog(LOG_INFO, "Timer fired");
 }
 
+/// @brief Gestore delle interruzioni (flag in sscause = 1)
+/// @return 1 se interruzione esterna, 2 se software, 0 altrimenti
 int dev_int() {
+
+    natq scause = readSCAUSE();
     
-    if (readSCAUSE() == 0x8000000000000009L) {
+    // Interruzione esterna
+    if (scause == 0x8000000000000009L) {
         // PLIC
         int irq = plic_claim();
 
@@ -48,8 +31,8 @@ int dev_int() {
         return 1;
     }
 
-    if (readSCAUSE() == 0x8000000000000001L) {
-        // software int
+    // Interruzione software
+    if (scause == 0x8000000000000001L) {
         clearSSIP();
 
         return 2;
@@ -59,6 +42,8 @@ int dev_int() {
         return 0;
 }
 
+/// Parte C++ del gestore delle interruzioni in modalità supervisor dal modulo utente
+/// Raccoglie l'interruzione e imposta il trap vector al gestore k_trap
 extern "C" void sInterruptHandler(){
 
     if ((readSSTATUS() & SSTATUS_SPP) != 0) 
@@ -68,14 +53,22 @@ extern "C" void sInterruptHandler(){
     //per il kernel
     writeSTVEC((void*)k_trap);
 
-    //Salva l'indirizzo a cui si deve tornare
-    //al termine della gestione dell'int
-    esecuzione->epc = readSEPC();
-
     if (readSCAUSE() == 8) {
-        // syscall
+        // syscall dallo spazio utente
+
+        // In EPC c'è l'indirizzo dell'istruzione che ha causato l'ecall
+        // Salviamo l'indirizzo dell'istruzione successiva, a cui si deve tornare
         esecuzione->epc += 4;
-        enableSInterrupts();
+        
+        // Usiamo primitive atomiche => non abilitiamo le interruzioni
+        // enableSInterrupts();
+
+        if (esecuzione->contesto[I_A7] == 0) { // activate_p
+            c_activate_p((void(*)(natq))esecuzione->contesto[I_A0], esecuzione->contesto[I_A1], esecuzione->contesto[I_A2], esecuzione->contesto[I_A3]);
+        }
+        else {
+            c_terminate_p();
+        }
 
         // system_call();
     }
@@ -83,9 +76,11 @@ extern "C" void sInterruptHandler(){
         // OK
     }
     else {
-        flog(LOG_WARN, "unexpected scause=%p, pid=%p", readSCAUSE(), esecuzione->id);
+        flog(LOG_WARN, "unexpected scause=%p, id=%p", readSCAUSE(), esecuzione->id);
         flog(LOG_WARN, "sepc=%p, stval=%p", readSEPC(), readSTVAL());
-        // TODO: distruggi il processo
+        
+        // Terminiamo e distruggiamo il processo
+        c_terminate_p();
     }
 
     //Potremmo venire da codice che aveva precedentemente eseguito
@@ -93,49 +88,38 @@ extern "C" void sInterruptHandler(){
     //Prima di fare qualsiasi cosa disattiviamole.
     disableSInterrupts();
 
-    //Ripristiniamo l'interrupt handler da usare al di fuori del kernel
-    writeSTVEC((void*)s_trap);
+    //Ripristiniamo l'interrupt handler a seconda del livello del processo in esecuzione
+    if (esecuzione->livello == LIV_UTENTE)
+        writeSTVEC((void*)s_trap);
+    else
+        writeSTVEC((void*)k_trap);
 }
 
-// extern "C" void sInterruptReturn(){
-//     // Prepariamo i valori di cui uservec avrà bisogno alla
-//     // prossima trap nel kernel
-//     //esecuzione->trapframe->kernel_satp = readSATP();
-//     //esecuzione->trapframe->kernel_trap = (natq)sInterruptHandler;
-
-//     //Indichiamo il livello utente come privilegio a cui tornare
-//     //clearSPreviousPrivilege();
-
-//     //Abilitiamo interruzioni per l'utente al ritorno
-//     //setSPreviousInterruptEnable();
-
-//     //writeSEPC((void*)esecuzione->trapframe->epc);
-
-//     // Informiamo trampoline.s su quale tabella delle pagine utente usare
-//     // natq user_page = writeSATP(esecuzione->satp);
-// }
-
 extern "C" void kInterruptHandler(){
-    int epc = readSEPC();
-    int status = readSSTATUS();
+    natq epc = readSEPC();
+    natq status = readSSTATUS();
     natq cause = readSCAUSE();
 
-    // ecall from s-mode
-    if (cause == 9 || cause == 8) {
+    if ((status & SSTATUS_SPP) == 0) 
+       fpanic("kerneltrap: not from supervisor mode");
+    if ((status & SSTATUS_SIE) != 0)
+        fpanic("kerneltrap: interrupts enabled");
+
+    // ecall da s-mode
+    if (cause == 9) {
+
+        // Salviamo l'indirizzo dell'istruzione successiva, a cui si deve tornare
         esecuzione->epc += 4;
+
         if (esecuzione->contesto[I_A7] == 0) { // activate_p
             c_activate_p((void(*)(natq))esecuzione->contesto[I_A0], esecuzione->contesto[I_A1], esecuzione->contesto[I_A2], esecuzione->contesto[I_A3]);
         }
         else {
             c_terminate_p();
         }
+        
         return;
     }
-
-    // if ((status & SSTATUS_SPP) == 0) 
-    //    fpanic("kerneltrap: not from supervisor mode");
-    if ((status & SSTATUS_SIE) != 0)
-        fpanic("kerneltrap: interrupts enabled");
     
     if (dev_int() == 0) {
         // Eccezione
@@ -146,7 +130,11 @@ extern "C" void kInterruptHandler(){
 
     // TEST: timer interrupts
     // if (dev_int() == 2) 
-    //   timer_debug();      
+    //   timer_debug();   
 
-        
+    //Ripristiniamo l'interrupt handler a seconda del livello del processo in esecuzione
+    if (esecuzione->livello == LIV_UTENTE)
+        writeSTVEC((void*)s_trap);
+    else
+        writeSTVEC((void*)k_trap);     
 }

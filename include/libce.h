@@ -1,6 +1,7 @@
 #ifndef LIBCE_H
 #define LIBCE_H
 #include "tipo.h"
+#include "read_write_reg.h"
 // Funzioni per leggere da o scrivere in un registro dello spazio di I/O
 extern "C" natb inputb(ioaddr reg);
 extern "C" void outputb(natb a, ioaddr reg);

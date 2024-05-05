@@ -14,4 +14,3 @@ extern "C" void sti();
 extern "C" void panic(const char *msg);
 extern "C" void ctors();
 extern "C" void dtors();
-extern "C" void writeSATP_asm(unsigned long);

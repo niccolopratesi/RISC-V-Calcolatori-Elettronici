@@ -226,12 +226,6 @@ public:
 // Traduzione di un indirizzo virtuale in fisico.
 paddr trasforma(paddr root_tab, vaddr v);
 
-// carica un nuovo valore in satp
-extern "C" void writeSATP(paddr addr);
-
-// restituisce il valore corrente di cr3
-extern "C" paddr readSATP();
-
 //invalida il TLB
 extern "C" void invalida_TLB();
 

@@ -12,3 +12,13 @@
 #define SSTATUS_UPIE (1L << 4)   
 #define SSTATUS_SIE (1L << 1)  
 #define SSTATUS_UIE (1L << 0) 
+
+extern "C" void s_trap();
+extern "C" void k_trap();
+extern "C" void disableSInterrupts();
+extern "C" void enableSInterrupts();
+extern "C" void sInterruptReturn();
+extern "C" void clearSPreviousPrivilege();
+extern "C" void clearSSIP();
+extern "C" int readSSIP();
+extern "C" void setSPreviousInterruptEnable();

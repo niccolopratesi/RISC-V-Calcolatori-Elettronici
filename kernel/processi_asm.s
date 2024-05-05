@@ -206,17 +206,23 @@ carica_stato:
 	csrw sepc, a1
 	
 	## Settiamo sstaus.spp a 0 se il processo è utente, 1 se è sistema
+	## Settiamo stvec a s_trap se il processo è utente, a k_trap se è sistema
 	lh a1, LIVELLO(s0)
 	# Salviamo il contenuto attuale di RA per non farcelo sovrascrivere dalla call
 	addi sp, sp, -8
 	sd ra, 0(sp)
-	# se a1 = 0 (utente => clear SPP)
+	# se a1 = 0 (utente => clear SPP, s_trap)
 	beqz a1, 1f
-	# se a1 = 1 (sistema => set SPP)
+	# se a1 = 1 (sistema => set SPP, k_trap)
 	call setSPreviousPrivilege
+	la a0, k_trap
+	csrw stvec, a0
 	j 2f
 1:
+	# livello utente
 	call clearSPreviousPrivilege
+	la a0, s_trap
+	csrw stvec, a0
 2:	
 	# Ripristiniamo RA
 	ld ra, 0(sp)
