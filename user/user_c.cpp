@@ -1,5 +1,5 @@
 #include "tipo.h"
-//#include "libce.h"
+#include "libce.h"
 #include "costanti.h"
 
 char c = 'a';
@@ -17,7 +17,7 @@ extern "C" void /*__attribute__((section(".main")))*/ main() {
     int a;
     int b = 13;
     c = 'b';
-    
+    do_log(LOG_INFO, "Fine main", 9);
     u_activate_p(funzione, 0, MIN_PRIORITY, 0);
     u_terminate_p();
 }

@@ -16,7 +16,7 @@
 // priorità minima dei processi esterni
 #define MIN_EXT_PRIO		1024UL
 // dimensione della memoria fisica
-#define MEM_TOT			(32*MiB)
+#define MEM_TOT			(128*MiB)
 // dimensione dello heap utente
 #define DIM_USR_HEAP		(1*MiB)
 // dimensione degli stack utente
@@ -29,6 +29,9 @@
 #define MAX_PRD			16
 // indirizzo dal quale e' montato il kernel
 #define KERNBASE 0x80000000L
+// indirizzo in cui è caricato il descrittore del modulo utente
+// caricato di default a metà della memoria fisica
+#define USER_MOD_START 0x84000000L
 // )
 
 // ( tipi delle primitive

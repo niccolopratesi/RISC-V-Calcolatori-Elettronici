@@ -1,4 +1,5 @@
 #include "elf.h"
+#include "tipo.h"
 
 typedef natw   Elf64_Half;
 typedef natl   Elf64_Word;

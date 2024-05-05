@@ -65,7 +65,7 @@ void init_frame()
 	// primo frame di M2
 	paddr fine_M1 = allinea(reinterpret_cast<paddr>(&end), DIM_PAGINA);
     // primo frame libero
-    paddr fine_user = allinea(reinterpret_cast<paddr>(&__user_end + DIM_USR_HEAP), DIM_PAGINA);
+    // paddr fine_user = allinea(reinterpret_cast<paddr>(&__user_end + DIM_USR_HEAP), DIM_PAGINA);
 	// numero di frame in M1 e indice di f in vdf
 	N_M1 = (fine_M1-0x80000000) / DIM_PAGINA;
 	// numero di frame in M2
@@ -75,11 +75,12 @@ void init_frame()
 		return;
 
     // numero di frame occupati dal modulo utente
-    natq N_UTN = (fine_user-fine_M1) / DIM_PAGINA;
+    // natq N_UTN = (fine_user-fine_M1) / DIM_PAGINA;
 
 	// creiamo la lista dei frame liberi, che inizialmente contiene tutti i
 	// frame di M2 non occupati dal modulo utente
-	primo_frame_libero = N_M1 + N_UTN;
+	// primo_frame_libero = N_M1 + N_UTN;
+	primo_frame_libero = N_M1;
 #ifndef N_STEP
 	// alcuni esercizi definiscono N_STEP == 2 per creare mapping non
 	// contigui in memoria virtale e controllare meglio alcuni possibili
@@ -88,7 +89,8 @@ void init_frame()
 #endif
 	natq last;
 	for (natq j = 0; j < N_STEP; j++) {
-		for (natq i = j; i < N_M2 - N_UTN; i += N_STEP) {
+		// for (natq i = j; i < N_M2 - N_UTN; i += N_STEP) {
+		for (natq i = j; i < N_M2; i += N_STEP) {
 			vdf[primo_frame_libero + i].prossimo_libero =
 				primo_frame_libero + i + N_STEP;
 			num_frame_liberi++;

@@ -1,8 +1,9 @@
 .global _start, start
+.global main
 _start:
 start:
-	nop
-    nop
+    call ctors
+    call main
     ret
 
 .globl func
@@ -24,3 +25,8 @@ u_terminate_p:
     ecall
     ret
 
+.global do_log
+do_log:
+    li a7, 2
+    ecall
+    ret

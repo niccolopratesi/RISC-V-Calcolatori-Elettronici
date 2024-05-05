@@ -190,35 +190,16 @@ error:
 ///
 /// @{
 ///////////////////////////////////////////////////////////////////////////////////
-// indirizzi di partenza e fine delle sezioni .text, .data e .bss del modulo utente, forniti dal collegatore
-extern "C" natq __user_start;
-extern "C" natq __user_etext;
-extern "C" natq __user_data_start;
-extern "C" natq __user_data_end;
-extern "C" natq __user_bss_start;
-extern "C" natq __user_end;
 
-struct mod_info {
-  /// indirizzi di partenza  e fine della sezione .text
-  paddr text_start;
-  paddr text_end;
-  /// indirizzi di partenza e fine della sezione .data
-  paddr data_start;
-  paddr data_end;
-  /// indirizzi di partenza e fine della sezione .bss
-  paddr bss_start;
-  paddr bss_end;
-
-  /// indirizzo virtuale di partenza del modulo
-  vaddr virt_beg;
-};
-
+#include "elf64.h"
 
 /// @brief Oggetto da usare con map() per caricare un segmento ELF in memoria virtuale.
 struct copy_segment {
 	// Il segmento si trova in memoria agli indirizzi (fisici) [mod_beg, mod_end)
 	// e deve essere visibile in memoria virtuale a partire dall'indirizzo
-	// virt_beg.
+	// virt_beg. Il segmento verrà copiato (una pagina alla volta) in
+	// frame liberi di M2. La memoria precedentemente occupata dal modulo
+	// sarà poi riutilizzata per lo heap di sistema.
 
 	/// base del segmento in memoria fisica
 	paddr mod_beg;
@@ -226,8 +207,6 @@ struct copy_segment {
 	paddr mod_end;
 	/// indirizzo virtuale della base del segmento
 	vaddr virt_beg;
-  /// se bss devo azzerare tutto
-  bool bss;
 
 	paddr operator()(vaddr);
 };
@@ -240,41 +219,33 @@ struct copy_segment {
  */
 paddr copy_segment::operator()(vaddr v)
 {
+	// allochiamo un frame libero in cui copiare la pagina
+	paddr dst = alloca_frame();
+	if (dst == 0)
+		return 0;
 
 	// offset della pagina all'interno del segmento
 	natq offset = v - virt_beg;
 	// indirizzo della pagina all'interno del modulo
 	paddr src = mod_beg + offset;
-  // indirizzo fisico associato a v
-  paddr dst = src;
 
 	// il segmento in memoria può essere più grande di quello nel modulo.
 	// La parte eccedente deve essere azzerata.
 	natq tocopy = DIM_PAGINA;
-	if (src > mod_end) {
-    // memoria fisica terminata, devo allocare un nuovo frame e azzerarlo
-    dst = alloca_frame();
-    if (dst == 0)
-      return 0;
+	if (src > mod_end)
 		tocopy = 0;
-  }
 	else if (mod_end - src < DIM_PAGINA)
-    // devo azzerare la parte eccedente
 		tocopy =  mod_end - src;
-
-  // se è bss devo azzerare tutto
-  if (bss)
-    tocopy = 0;
-
-  // se c'è una parte da azzerare o se è un segmento bss 
+	if (tocopy > 0)
+		memcpy(voidptr_cast(dst), voidptr_cast(src), tocopy);
 	if (tocopy < DIM_PAGINA)
-		memset(reinterpret_cast<void*>(dst + tocopy), 0, DIM_PAGINA - tocopy);
+		memset(voidptr_cast(dst + tocopy), 0, DIM_PAGINA - tocopy);
 	return dst;
 }
 
-/*! @brief Mappa un modulo caricato in M2.
+/*! @brief Carica un modulo in M2.
  *
- *  Mappa il modulo al suo indirizzo virtuale e
+ *  Copia il modulo in M2, lo mappa al suo indirizzo virtuale e
  *  aggiunge lo heap dopo l'ultimo indirizzo virtuale usato.
  *
  *  @param mod	informazioni sul modulo caricato dal boot loader
@@ -285,57 +256,70 @@ paddr copy_segment::operator()(vaddr v)
  *  @return indirizzo virtuale dell'entry point del modulo, o zero
  *  	   in caso di errore
  */
-vaddr carica_modulo(mod_info mod, paddr root_tab, natq flags, natq heap_size)
+vaddr carica_modulo(natq mod_start, paddr root_tab, natq flags, natq heap_size)
 {
-  vaddr last_vaddr = 0; // base dello heap
-  vaddr virt_beg, virt_end;
-  paddr mod_beg, mod_end;
+	// puntatore all'intestazione ELF
+	Elf64_Ehdr* elf_h  = ptr_cast<Elf64_Ehdr>(mod_start);
+	// indirizzo fisico della tabella dei segmenti
+	paddr ph_addr = mod_start + elf_h->e_phoff;
+	// ultimo indirizzo virtuale usato
+	vaddr last_vaddr = 0;
+	// flag con cui eseguire la map
+	natq map_flags;
+	// esaminiamo tutta la tabella dei segmenti
+	for (int i = 0; i < elf_h->e_phnum; i++) {
+		Elf64_Phdr* elf_ph = ptr_cast<Elf64_Phdr>(ph_addr);
 
-  // Per ogni sezione, i byte che si trovano ora in memoria agli indirizzi (fisici)
-  // [mod_beg, mod_end) devono diventare visibili nell'intervallo
-  // di indirizzi virtuali [virt_beg, virt_end).
+		// ci interessano solo i segmenti di tipo PT_LOAD
+		if (elf_ph->p_type != PT_LOAD)
+			continue;
 
-  // mappo la sezione .text del modulo con permessi di lettura ed esecuzione
-  // l'inizio dei segmenti e dei moduli è sempre allineato alla pagina
-  virt_beg = mod.virt_beg;
-  virt_end = allinea(virt_beg + mod.text_end - mod.text_start, DIM_PAGINA);
-  if (virt_end > last_vaddr) // aggiorniamo last_vaddr
-    last_vaddr = virt_end;
-  copy_segment text{mod.text_start, mod.text_end, virt_beg, false};
-  if (map(root_tab, virt_beg, virt_end, flags | BIT_R | BIT_X, text) != virt_end)
-    return 0;
+		// i byte che si trovano ora in memoria agli indirizzi (fisici)
+		// [mod_beg, mod_end) devono diventare visibili nell'intervallo
+		// di indirizzi virtuali [virt_beg, virt_end).
+		// il loader lascia una pagina per gli header, quindi si inizia a copiare da 0x1000 più avanti
+		vaddr	virt_beg = elf_ph->p_vaddr,
+			virt_end = virt_beg + elf_ph->p_memsz;
+		paddr	mod_beg  = mod_start + elf_ph->p_offset,
+			mod_end  = mod_beg + elf_ph->p_filesz;
 
-  flog(LOG_INFO, " - segmento .text %s r-x mappato a [%p, %p)",
-      (flags & BIT_U) ? "utente " : "sistema",
-      virt_beg, virt_end);
+		// se necessario, allineiamo alla pagina gli indirizzi di
+		// partenza e di fine
+		natq page_offset = virt_beg & (DIM_PAGINA - 1);
+		virt_beg -= page_offset;
+		mod_beg  -= page_offset;
+		virt_end = allinea(virt_end, DIM_PAGINA);
 
-  // mappo la sezione .data del modulo con permessi di lettura e scrittura
-  virt_beg = virt_end;
-  virt_end = allinea(virt_beg + mod.data_end - mod.data_start, DIM_PAGINA);
-  if (virt_end > last_vaddr) // aggiorniamo last_vaddr
-    last_vaddr = virt_end;
-  copy_segment data{mod.data_start, mod.data_end, virt_beg, false};
-  if (map(root_tab, virt_beg, virt_end, flags | BIT_R | BIT_W, data) != virt_end)
-    return 0;
+		// aggiorniamo l'ultimo indirizzo virtuale usato
+		if (virt_end > last_vaddr)
+			last_vaddr = virt_end;
 
-  flog(LOG_INFO, " - segmento .data %s rw- mappato a [%p, %p)",
-      (flags & BIT_U) ? "utente " : "sistema",
-      virt_beg, virt_end);
+		// settiamo BIT nella traduzione
+		map_flags = flags; // BIT_U;
+		if (elf_ph->p_flags & PF_W)
+			map_flags |= BIT_W;
+		if (elf_ph->p_flags & PF_X)
+			map_flags |= BIT_X;
+		if (elf_ph->p_flags & PF_R)
+			map_flags |= BIT_R;
 
-  // mappo la sezione .bss del modulo con permessi di lettura e scrittura
-  virt_beg = virt_end;
-  virt_end = allinea(virt_beg + mod.bss_end - mod.bss_start, DIM_PAGINA);
-  if (virt_end > last_vaddr) // aggiorniamo last_vaddr
-    last_vaddr = virt_end;
-  copy_segment bss{mod.bss_start, mod.bss_end, virt_beg, true};
-  if (map(root_tab, virt_beg, virt_end, flags | BIT_R | BIT_W, bss) != virt_end)
-    return 0;
+		// mappiamo il segmento
+		if (map(root_tab,
+			virt_beg,
+			virt_end,
+			map_flags,
+			copy_segment{mod_beg, mod_end, virt_beg}) != virt_end)
+			return 0;
 
-  flog(LOG_INFO, " - segmento .bss %s rw- mappato a [%p, %p)",
-      (flags & BIT_U) ? "utente " : "sistema",
-      virt_beg, virt_end);
+		flog(LOG_INFO, " - segmento %s %s %s mappato a [%lx, %lx)",
+				(map_flags & BIT_U) ? "utente " : "sistema",
+				(map_flags & BIT_W) ? "read/write" : "read-only ",
+				(map_flags & BIT_X) ? "exec" : "noexec",
+				virt_beg, virt_end);
 
-
+		// passiamo alla prossima entrata della tabella dei segmenti
+		ph_addr += elf_h->e_phentsize;
+	}
 	// dopo aver mappato tutti i segmenti, mappiamo lo spazio destinato
 	// allo heap del modulo. I frame corrispondenti verranno allocati da
 	// alloca_frame()
@@ -345,10 +329,10 @@ vaddr carica_modulo(mod_info mod, paddr root_tab, natq flags, natq heap_size)
 		flags | BIT_R | BIT_W,
 		[](vaddr) { return alloca_frame(); }) != last_vaddr + heap_size)
 		return 0;
-	flog(LOG_INFO, " - heap:                                 [%p, %p)",
+	flog(LOG_INFO, " - heap:                                 [%lx, %lx)",
 				last_vaddr, last_vaddr + heap_size);
-	flog(LOG_INFO, " - entry point: 0x%lx", mod.text_start);
-	return mod.virt_beg;
+	flog(LOG_INFO, " - entry point: 0x%lx", elf_h->e_entry);
+	return elf_h->e_entry;
 }
 
 /*! @brief Mappa il modulo I/O.
@@ -371,18 +355,18 @@ vaddr carica_modulo(mod_info mod, paddr root_tab, natq flags, natq heap_size)
  */
 vaddr carica_utente(paddr root_tab)
 {
-  mod_info mod;
+//   mod_info mod;
 
-  mod.text_start = reinterpret_cast<paddr>(&__user_start);
-  mod.text_end = reinterpret_cast<paddr>(&__user_etext);
-  mod.data_start = reinterpret_cast<paddr>(&__user_data_start);
-  mod.data_end = reinterpret_cast<paddr>(&__user_data_end);
-  mod.bss_start = reinterpret_cast<paddr>(&__user_bss_start);
-  mod.bss_end = reinterpret_cast<paddr>(&__user_end);
-  mod.virt_beg = ini_utn_c;
+//   mod.text_start = reinterpret_cast<paddr>(&__user_start);
+//   mod.text_end = reinterpret_cast<paddr>(&__user_etext);
+//   mod.data_start = reinterpret_cast<paddr>(&__user_data_start);
+//   mod.data_end = reinterpret_cast<paddr>(&__user_data_end);
+//   mod.bss_start = reinterpret_cast<paddr>(&__user_bss_start);
+//   mod.bss_end = reinterpret_cast<paddr>(&__user_end);
+//   mod.virt_beg = ini_utn_c;
 
 	flog(LOG_INFO, "mappo il modulo utente:");
-	return carica_modulo(mod, root_tab, BIT_U, DIM_USR_HEAP);
+	return carica_modulo(USER_MOD_START, root_tab, BIT_U, DIM_USR_HEAP);
 }
 
 bool crea_spazio_condiviso(paddr root_tab)

@@ -1,6 +1,7 @@
 K=kernel
 U=user
 T=test
+I=include
 ODIR=objs
 
 _OBJS = $(patsubst $(K)/%.c,%.o,$(wildcard $(K)/*.c)) $(patsubst $(K)/%.s,%.o,$(wildcard $(K)/*.s)) $(patsubst $(K)/%.cpp,%.o,$(wildcard $(K)/*.cpp))
@@ -45,6 +46,7 @@ CC = $(TOOLPREFIX)gcc
 CXX = $(TOOLPREFIX)g++
 AS = $(TOOLPREFIX)as
 LD = $(TOOLPREFIX)ld
+STRIP = $(TOOLPREFIX)strip
 
 CFLAGS = -Wall
 CFLAGS += -O0
@@ -55,7 +57,8 @@ CFLAGS += -Iinclude
 CXXFLAGS = -Wall
 CXXFLAGS += -O0
 CXXFLAGS += -ggdb
-CXXFLAGS += -fno-pic
+CXXFLAGS += -fpic
+CXXFLAGS += -no-pie
 CXXFLAGS += -mcmodel=medany
 CXXFLAGS += -Iinclude
 CXXFLAGS += -fno-exceptions
@@ -67,9 +70,15 @@ CXXFLAGS += -std=c++17
 CXXFLAGS += -ffreestanding
 CXXFLAGS += -nostdlib
 
-ASFLAGS:= -ggdb
+ASFLAGS = 		\
+	-ggdb 		\
+	-fpic
 
-LDFLAGS = -nostdlib
+LDFLAGS = 		\
+	-nostdlib	\
+	-L$(I)		
+
+LDLIBS = -lce
 
 RUNFLAGS = -machine virt
 RUNFLAGS += -bios none
@@ -131,29 +140,35 @@ $(ODIR)/%.o: libCE/as/%.s
 ##################
 
 
+STARTUSER = 0xffff800000001000
 
-$K/kernel: $(OBJS) $(USEROBJS) $(PRODOBJS) $(LIBCE_OBJECTS) $(HEADERS) $K/kernel.ld $(ODIR)/test_traps_asm.o $(ODIR)/test_traps_c.o
-	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $K/kernel $(OBJS) $(PRODOBJS) $(LIBCE_OBJECTS) $(ODIR)/test_traps_asm.o $(ODIR)/test_traps_c.o
-	$(LD) $(LDFLAGS) -Ttext 0xffff800000000000 -o $U/user_elf $(USEROBJS)
+$(I)/libce.a: $(LIBCE_OBJECTS) $(HEADERS)
+	$(TOOLPREFIX)ar rcs $@ $(LIBCE_OBJECTS)
+
+$K/kernel: $(OBJS) $(PRODOBJS) $(HEADERS) $(I)/libce.a $K/kernel.ld $(ODIR)/test_traps_asm.o $(ODIR)/test_traps_c.o
+	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $K/kernel $(OBJS) $(PRODOBJS) $(ODIR)/test_traps_asm.o $(ODIR)/test_traps_c.o $(LDLIBS)
+
 
 $T/kernel_test: $(OBJS) $(TESTOBJS) $(LIBCE_OBJECTS) $(HEADERS) $K/kernel.ld
 	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $T/kernel_test $(OBJS) $(TESTOBJS) $(LIBCE_OBJECTS)
 
-# $U/user_test: $(OBJS) $(TESTOBJS) $(USEROBJS) $(LIBCE_OBJECTS) $(HEADERS) $K/kernel.ld
-# 	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $U/user_test $(OBJS) $(TESTOBJS) $(USEROBJS) $(LIBCE_OBJECTS)
-
 $U/user_test: $(OBJS) $(TESTOBJS) $(USEROBJS) $(LIBCE_OBJECTS) $(HEADERS) $K/kernel.ld
-	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $U/user_test $(OBJS) $(TESTOBJS) $(LIBCE_OBJECTS)
-	
+	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $U/user_test $(OBJS) $(TESTOBJS) $(USEROBJS) $(LIBCE_OBJECTS)
+
+$U/user: $(USEROBJS) $(HEADERS) $(I)/libce.a
+	$(LD) $(LDFLAGS) -Ttext $(STARTUSER) -o $@ $(USEROBJS) $(LDLIBS)
+
+$U/%.strip: $U/%
+	$(STRIP) -s $< -o $@
 
 
-compile: $K/kernel
+compile: $K/kernel $U/user.strip
 
-run: $K/kernel
-	$(RUN) -kernel $K/kernel
+run: $K/kernel $U/user.strip
+	$(RUN) -kernel $K/kernel -initrd $U/user.strip
 
-debug: $K/kernel
-	$(DEBUG) -kernel $K/kernel -initrd $U/user_elf
+debug: $K/kernel $U/user.strip
+	$(DEBUG) -kernel $K/kernel -initrd $U/user.strip
 
 test: $T/kernel_test
 	$(RUN) -kernel $T/kernel_test
@@ -168,4 +183,4 @@ test_user_debug: $U/user_test
 	$(DEBUG) -kernel $U/user_test
 
 clean:
-	rm -f $(ODIR)/*.o $K/kernel $T/kernel_test $U/user_test
+	rm -f $(ODIR)/*.o $K/kernel $T/kernel_test $U/user_test $(I)/lib*.a
