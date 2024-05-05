@@ -4,6 +4,11 @@
 .align 4
 timer_machine_handler:
 
+    # Machine mode bypasses memory translation
+    # So we save the actual sp in sscratch and load an unused paddr for sp
+    csrw sscratch, sp
+    li sp, 0x88000000
+
     # We need to use some registers, so we push them to the stack
     addi sp, sp, -24
     sd a0, 0(sp)
@@ -27,6 +32,9 @@ timer_machine_handler:
     ld a1, 8(sp)
     ld a2, 16(sp)
     addi sp, sp, 24
+
+    # We restore the sp
+    csrr sp, sscratch
     
     mret
 

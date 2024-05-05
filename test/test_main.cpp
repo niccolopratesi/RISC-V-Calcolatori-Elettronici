@@ -20,9 +20,7 @@ __attribute__ ((aligned (16))) char stack0[4096];
 
 // 	struct des_proc *puntatore;
 // };
-extern des_proc *esecuzione;
-extern des_proc init;
-extern des_proc *esecuzione_precedente;
+des_proc init;
 
 
 extern "C" void test_stato_c();
@@ -42,9 +40,12 @@ extern "C" int boot_main(){
   test_paginazione_c();
   flog(LOG_INFO, "Paging test done");
   
+  /*
+  // Tolta perché manca l'inizializzazione dei processi
   flog(LOG_INFO, "Starting salva/carica_stato test.");
   test_stato_c();
-  flog(LOG_INFO, "Salva/carica_stato test done.");  
+  flog(LOG_INFO, "Salva/carica_stato test done."); 
+  */ 
   
   flog(LOG_INFO, "Starting keyboard test");
   test_keyboard_c();

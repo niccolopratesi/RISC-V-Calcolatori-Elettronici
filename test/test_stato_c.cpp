@@ -2,9 +2,7 @@
 #include "proc.h"
 #include "tipo.h"
 
-extern des_proc *esecuzione;
 extern des_proc init;
-//struct des_proc *esecuzione_precedente;
 
 extern "C" void test_stato_asm();
 extern "C" void boot_printf(char *fmt, ...);

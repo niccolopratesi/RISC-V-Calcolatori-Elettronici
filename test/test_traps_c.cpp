@@ -38,7 +38,7 @@ int dev_int() {
         int irq = plic_claim();
 
         if (irq == UART0_IRQ) 
-            /*uart_intr()*/;
+            uart_intr();
         else 
             flog(LOG_WARN, "Unexpected interrupt: %d", irq);
 
@@ -118,7 +118,7 @@ extern "C" void sInterruptHandler(){
 extern "C" void kInterruptHandler(){
     int epc = readSEPC();
     int status = readSSTATUS();
-    int cause = readSCAUSE();
+    natq cause = readSCAUSE();
 
     // ecall from s-mode
     if (cause == 9 || cause == 8) {
