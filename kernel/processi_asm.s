@@ -258,6 +258,7 @@ carica_stato:
 	ld t1, T1(s0)
 	ld t2, T2(s0)
 	ld s1, S1(s0)
+	ld a0, A0(s0)
 	ld a1, A1(s0)
 	ld a2, A2(s0)
 	ld a3, A3(s0)
