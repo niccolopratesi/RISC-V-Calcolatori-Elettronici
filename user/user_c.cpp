@@ -35,6 +35,11 @@ void main_body(natq tot) {
     flog(LOG_DEBUG, "Aspetto che il processo conta2 conti fino a %d", tot-quanti1);
     sem_wait(end_count);
 
+    if (count == (int)tot) {
+        flog(LOG_DEBUG, "Test completato con successo", count);
+        flog(LOG_DEBUG, ">>>FINE<<<");
+    }
+
     terminate_p();
 }
 

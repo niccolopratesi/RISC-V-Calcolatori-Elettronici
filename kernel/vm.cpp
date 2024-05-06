@@ -51,8 +51,6 @@ natq num_frame_liberi;
 
 // ultimo indirizzo del modulo sistema + heap sistema, fornito dal collegatore
 extern "C" natq end;
-// ultimo indirizzo del modulo utente, fornito dal collegatore
-extern "C" natq __user_end;
 
 // init_des_frame viene chiamata in fase di inizializzazione.  Tutta la memoria
 // non ancora occupata viene usata per i frame.  La funzione si preoccupa anche
@@ -65,8 +63,6 @@ void init_frame()
 {
 	// primo frame di M2
 	paddr fine_M1 = allinea(reinterpret_cast<paddr>(&end), DIM_PAGINA);
-    // primo frame libero
-    // paddr fine_user = allinea(reinterpret_cast<paddr>(&__user_end + DIM_USR_HEAP), DIM_PAGINA);
 	// numero di frame in M1 e indice di f in vdf
 	N_M1 = (fine_M1-0x80000000) / DIM_PAGINA;
 	// numero di frame in M2
@@ -75,12 +71,8 @@ void init_frame()
 	if (!N_M2)
 		return;
 
-    // numero di frame occupati dal modulo utente
-    // natq N_UTN = (fine_user-fine_M1) / DIM_PAGINA;
-
 	// creiamo la lista dei frame liberi, che inizialmente contiene tutti i
-	// frame di M2 non occupati dal modulo utente
-	// primo_frame_libero = N_M1 + N_UTN;
+	// frame di M2
 	primo_frame_libero = N_M1;
 #ifndef N_STEP
 	// alcuni esercizi definiscono N_STEP == 2 per creare mapping non
@@ -90,7 +82,6 @@ void init_frame()
 #endif
 	natq last;
 	for (natq j = 0; j < N_STEP; j++) {
-		// for (natq i = j; i < N_M2 - N_UTN; i += N_STEP) {
 		for (natq i = j; i < N_M2; i += N_STEP) {
 			vdf[primo_frame_libero + i].prossimo_libero =
 				primo_frame_libero + i + N_STEP;
