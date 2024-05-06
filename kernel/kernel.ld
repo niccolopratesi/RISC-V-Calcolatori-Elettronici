@@ -72,14 +72,14 @@ SECTIONS
   .plt            : { *(.plt) *(.iplt) }
   .text           :
   {
-    *(EXCLUDE_FILE (objs/user*.o) .text.unlikely .text.*_unlikely .text.unlikely.*)
-    *(EXCLUDE_FILE (objs/user*.o) .text.exit .text.exit.*)
-    *(EXCLUDE_FILE (objs/user*.o) .text.startup .text.startup.*)
-    *(EXCLUDE_FILE (objs/user*.o) .text.hot .text.hot.*)
-    *(SORT(EXCLUDE_FILE (objs/user*.o) .text.sorted.*))
-    *(EXCLUDE_FILE (objs/user*.o) .text .stub .text.* .gnu.linkonce.t.*)
+    *(.text.unlikely .text.*_unlikely .text.unlikely.*)
+    *(.text.exit .text.exit.*)
+    *(.text.startup .text.startup.*)
+    *(.text.hot .text.hot.*)
+    *(SORT(.text.sorted.*))
+    *(.text .stub .text.* .gnu.linkonce.t.*)
     /* .gnu.warning sections are handled specially by elf.em.  */
-    *(EXCLUDE_FILE (objs/user*.o) .gnu.warning)
+    *(.gnu.warning)
   }
   .fini           :
   {
@@ -88,7 +88,7 @@ SECTIONS
   PROVIDE (__etext = .);
   PROVIDE (_etext = .);
   PROVIDE (etext = .);
-  .rodata         : {EXCLUDE_FILE (objs/user*.o) *(.rodata .rodata.* .gnu.linkonce.r.*) }
+  .rodata         : {*(.rodata .rodata.* .gnu.linkonce.r.*) }
   .rodata1        : { *(.rodata1) }
   .sdata2         :
   {
@@ -172,7 +172,7 @@ SECTIONS
   .data           :
   {
     __DATA_BEGIN__ = .;
-    *(EXCLUDE_FILE (objs/user*.o) .data .data.* .gnu.linkonce.d.*)
+    *(.data .data.* .gnu.linkonce.d.*)
     SORT(CONSTRUCTORS)
   }
   .data1          : { *(.data1) }
@@ -183,23 +183,23 @@ SECTIONS
   .sdata          :
   {
     __SDATA_BEGIN__ = .;
-    *(EXCLUDE_FILE (objs/user*.o) .srodata.cst16) *(.srodata.cst8) *(.srodata.cst4) *(.srodata.cst2) *(.srodata .srodata.*)
-    *(EXCLUDE_FILE (objs/user*.o) .sdata .sdata.* .gnu.linkonce.s.*)
+    *(.srodata.cst16) *(.srodata.cst8) *(.srodata.cst4) *(.srodata.cst2) *(.srodata .srodata.*)
+    *(.sdata .sdata.* .gnu.linkonce.s.*)
   }
   _edata = .; PROVIDE (edata = .);
   . = .;
   __bss_start = .;
   .sbss           :
   {
-    *(EXCLUDE_FILE (objs/user*.o) .dynsbss)
-    *(EXCLUDE_FILE (objs/user*.o) .sbss .sbss.* .gnu.linkonce.sb.*)
-    *(EXCLUDE_FILE (objs/user*.o) .scommon)
+    *(.dynsbss)
+    *(.sbss .sbss.* .gnu.linkonce.sb.*)
+    *(.scommon)
   }
   .bss            :
   {
-   *(EXCLUDE_FILE (objs/user*.o) .dynbss)
-   *(EXCLUDE_FILE (objs/user*.o) .bss .bss.* .gnu.linkonce.b.*)
-   *(EXCLUDE_FILE (objs/user*.o) COMMON)
+   *(.dynbss)
+   *(.bss .bss.* .gnu.linkonce.b.*)
+   *(COMMON)
    /* Align here to ensure that the .bss section occupies space up to
       _end.  Align after .bss to ensure correct alignment even if the
       .bss section disappears because there are no input sections.
@@ -224,38 +224,6 @@ SECTIONS
     _end = .; PROVIDE (end = .);
   }
 
-  /* START OF USER MODULE */
-  .user          : 
-  {
-    . = ALIGN(0x1000);
-    PROVIDE (__user_start = .);
-    KEEP(objs/user*.o(.main))
-    KEEP(objs/user*.o(.text .text.*))
-    . = ALIGN(0x1000);
-    PROVIDE (__user_etext = .);
-
-    . = ALIGN(0x1000);
-    PROVIDE (__user_data_start = .);
-    KEEP(objs/user*.o(.srodata .srodata.*))
-    . = ALIGN(16);
-    KEEP(objs/user*.o(.rodata .rodata.*))
-    . = ALIGN(16);
-    KEEP(objs/user*.o(.sdata .sdata.*))
-    . = ALIGN(16);
-    KEEP(objs/user*.o(.data .data.*))
-    PROVIDE (__user_data_end = .);
-
-    . = ALIGN(0x1000);
-    PROVIDE (__user_bss_start = .);
-    KEEP(objs/user*.o(dynsbss))
-    KEEP(objs/user*.o(.sbss .sbss.*))
-    KEEP(objs/user*.o(.scommon))
-    . = ALIGN(16);
-    KEEP(objs/user*.o(dynbss))
-    KEEP(objs/user*.o(.bss .bss.*))
-    KEEP(objs/user*.o(COMMON))
-    PROVIDE (__user_end = .);
-  }
   /* . = DATA_SEGMENT_END (.); */
   /* Stabs debugging sections.  */
   .stab          0 : { *(.stab) }
