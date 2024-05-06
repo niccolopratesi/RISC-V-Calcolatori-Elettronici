@@ -2,6 +2,7 @@
 #include "proc.h"
 #include "costanti.h"
 #include "vm.h"
+#include "semafori.h"
 
 /// @brief Descrittore di semaforo
 struct des_sem {
@@ -17,14 +18,6 @@ struct des_sem {
 /// I primi MAX_SEM semafori di array_dess sono per il livello utente, gli altri
 /// MAX_SEM sono per il livello sistema.
 des_sem array_dess[MAX_SEM * 2];
-
-/*! @brief Restituisce il livello a cui si trovava il processore al momento
- *  in cui è stata invocata la primitiva.`.
- */
-int liv_chiamante()
-{
-	return esecuzione->livello;
-}
 
 /// Numero di semafori allocati per il livello utente
 natl sem_allocati_utente  = 0;
@@ -43,7 +36,7 @@ natl alloca_sem()
 	// abbiamo già allocati (variabili sem_allocati_utente e
 	// sem_allocati_sistema)
 
-	int liv = liv_chiamante();
+	int liv = esecuzione->livello;
 	natl i;
 	if (liv == LIV_UTENTE) {
 		if (sem_allocati_utente >= MAX_SEM)
@@ -70,7 +63,7 @@ bool sem_valido(natl sem)
 	// un semaforo è valido se e solo se il suo indice è inferiore
 	// al numero dei semafori allocati
 
-	int liv = liv_chiamante();
+	int liv = esecuzione->livello;
 	return sem < sem_allocati_utente ||
 		(liv == LIV_SISTEMA && sem - MAX_SEM < sem_allocati_sistema);
 }

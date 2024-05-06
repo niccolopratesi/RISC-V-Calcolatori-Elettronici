@@ -2,6 +2,7 @@
 #include "vm.h"
 #include "proc.h"
 #include "costanti.h"
+#include "sys.h"
 #include "uart.h"
 #include "plic.h"
 #include "pci_risc.h"
@@ -93,7 +94,7 @@ extern "C" int boot_main(){
 	esecuzione = &init;
 	esecuzione_precedente = esecuzione;
 
-	flog(LOG_INFO, "Nucleo di Calcolatori Elettronici - Risc-V");
+	flog(LOG_INFO, "Nucleo di Calcolatori Elettronici - RISC-V");
 
 	// Usiamo come heap la parte di memoria comresa tra __heap_start e __heap_start + HEAP_SIZE
   heap_start = allinea(reinterpret_cast<void*>(&__heap_start), DIM_PAGINA);

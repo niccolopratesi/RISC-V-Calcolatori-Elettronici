@@ -541,3 +541,27 @@ extern "C" void c_abort_p(bool selfdump)
 	flog(LOG_WARN, "Processo %d abortito", p->id);
 	c_terminate_p(/* logmsg= */ false);
 }
+
+int MAX_LOG = 5;
+
+/*! @brief Parte C++ della primitiva do_log().
+ *
+ *  @param sev severità del messaggio
+ *  @param buf buffer che contiene il messaggio
+ *  @param quanti lunghezza del messaggio in byte
+ */
+extern "C" void c_do_log(log_sev sev, const char* buf, natl quanti)
+{
+	if (esecuzione->livello == LIV_UTENTE &&
+			!c_access(int_cast<vaddr>(buf), quanti, false, false)) {
+		flog(LOG_WARN, "log: parametri non validi");
+		c_abort_p();
+		return;
+	}
+	if (sev > MAX_LOG) {
+		flog(LOG_WARN, "log: livello di warning errato");
+		c_abort_p();
+		return;
+	}
+	do_log(sev, buf, quanti);
+}

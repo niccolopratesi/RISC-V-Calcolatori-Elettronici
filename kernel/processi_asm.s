@@ -132,15 +132,16 @@ salva_stato:
 
 	# se il processo gira a livello sistema non devo fare altro
 	# se il processo gira a livello utente devo spostare sp alla pila sistema
-	ld a0, esecuzione
-	lh a1, LIVELLO(a0)
-	bne a1, zero, 1f
+	# sporco t0 e t1
+	ld t0, esecuzione
+	lh t1, LIVELLO(t0)
+	bne t1, zero, 1f
 
 	# CAMBIO
 	# in x86 rsp salta automaticamente a tss_punt_nucleo, in RISC-V sp punta ancora alla pila utente del processo
 	# salviamo a0 in sscratch per poterlo usare come puntatore al des_proc
 	# carichiamo il puntatore alla pila del sistema in sp
-	ld sp, PUNT_NUCLEO(a0)
+	ld sp, PUNT_NUCLEO(t0)
 1:
 	ret # jr ra: Indirizzo di ritorno salvato in ra
 	.cfi_endproc
@@ -361,17 +362,5 @@ halt:
 end_program:
 	call reboot
 	call halt
-	ret
-	
-.global activate_p
-activate_p:
-	li a7, 0
-	ecall
-	ret
-
-.global terminate_p
-terminate_p:
-	li a7, 1
-	ecall
 	ret
 	

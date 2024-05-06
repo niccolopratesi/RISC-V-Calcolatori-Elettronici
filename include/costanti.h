@@ -42,7 +42,7 @@
 #define TIPO_W			0x03	// sem_wait
 #define TIPO_S			0x04	// sem_signal
 #define TIPO_D			0x05	// delay
-#define TIPO_L			0x06	// log
+#define TIPO_L			0x06	// do_log
 #define TIPO_GMI		0x07	// getmeminfo (debug)
 //   )
 //   ( riservate per il modulo I/O
