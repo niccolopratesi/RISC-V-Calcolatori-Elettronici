@@ -241,8 +241,14 @@ extern "C" bool c_access(vaddr begin, natq dim, bool writeable, bool shared)
 		tab_entry e = it.get_e();
 
 		// interrompiamo il ciclo non appena troviamo qualcosa che non va
-		if (!(e & BIT_V) || !(e & BIT_U) || (writeable && !(e & BIT_W)))
+		// in RISC-V contano solo i bit dei permessi della foglia
+		if (!(e & BIT_V))
 			return false;
+		
+		if (it.is_leaf()) {
+			if (!(e & BIT_U) || (writeable && !(e & BIT_W)))
+				return false;
+		}
 	}
 	esecuzione->contesto[I_A0] = true;
 	return true;
