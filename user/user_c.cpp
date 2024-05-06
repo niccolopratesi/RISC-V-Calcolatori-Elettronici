@@ -1,24 +1,51 @@
-#include "tipo.h"
-#include "libce.h"
-#include "costanti.h"
+#include "all.h"
+/*
+    Semplice progrmma di test:
 
-char c = 'a';
+    main crea un processo main_body che deve contare fino a tot.
+    main_body inizializza il semaforo di sincronizzazione end_count,
+    dopodiché crea due processi conta che, in due step, portano count a tot.
+*/
+natl mainb_proc, conta_proc;
+int count = 0;
+natl end_count;
 
-extern "C" natl u_activate_p(void f(natq), natq a, natl prio, natl liv);
-extern "C" void u_terminate_p();
-extern "C" void func();
+void conta(natq quanti) {
+    for (int i = 0; i < quanti; i++) {
+        count++;
+    }
 
-extern "C" void funzione(natq i) {
-    func();
-    u_terminate_p();
+    flog(LOG_DEBUG, "Fine conta: count = %d", count);
+    sem_signal(end_count);
+    terminate_p();
 }
 
-extern "C" void /*__attribute__((section(".main")))*/ main() {
-    int a;
-    int b = 13;
-    c = 'b';
-    do_log(LOG_INFO, "Fine main", 9);
-    u_activate_p(funzione, 0, MIN_PRIORITY, 0);
-    u_terminate_p();
+void main_body(natq tot) {
+    natq quanti1 = tot/2;
+    
+    end_count = sem_ini(0);
+
+    flog(LOG_DEBUG, "Creo il processo conta1");
+    conta_proc = activate_p(conta, quanti1, MIN_PRIORITY, LIV_UTENTE);
+    flog(LOG_DEBUG, "Aspetto che il processo conta1 conti fino a %d", quanti1);
+    sem_wait(end_count);
+
+    flog(LOG_DEBUG, "Creo il processo conta2");
+    conta_proc = activate_p(conta, tot-quanti1, MIN_PRIORITY, LIV_UTENTE);
+    flog(LOG_DEBUG, "Aspetto che il processo conta2 conti fino a %d", tot-quanti1);
+    sem_wait(end_count);
+
+    terminate_p();
+}
+
+extern "C" void main() {
+    flog(LOG_DEBUG, ">>>INIZIO<<<");
+
+    flog(LOG_DEBUG, "Creo il processo main_body utente");
+    natl mainb;
+    mainb = activate_p(main_body, 1000, MIN_PRIORITY+1, LIV_UTENTE);
+
+    flog(LOG_DEBUG, "Cedo il controllo al processo main_body utente...");
+    terminate_p();
 }
 

@@ -9,7 +9,7 @@
 .equ TIPO_W,			0x03	# sem_wait
 .equ TIPO_S,			0x04	# sem_signal
 .equ TIPO_D,			0x05	# delay
-.equ TIPO_L,			0x06	# log
+.equ TIPO_L,			0x06	# do_log
 .equ TIPO_GMI,  		0x07	# getmeminfo (debug)
 	.global sem_ini
 sem_ini:

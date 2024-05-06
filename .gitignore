@@ -4,3 +4,4 @@ test/kernel_test
 user/user 
 user/user.strip
 lib*.a
+.vscode

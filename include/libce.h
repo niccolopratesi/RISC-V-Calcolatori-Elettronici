@@ -74,12 +74,6 @@ bool pci_find_dev(natb& bus, natb& dev, natb& fun, natw vendorID, natw deviceID)
 bool pci_find_class(natb& bus, natb& dev, natb& fun, natb code[]);
 bool pci_next(natb& bus, natb& dev,natb& fun);
 // Funzioni per lo heap
-template<typename T>
-T constexpr allinea(T v, size_t a) {
-	size_t v_ = reinterpret_cast<size_t>(v);
-	v_ = (v_ % a == 0 ? v_ : ((v_ + a - 1) / a) * a);
-	return reinterpret_cast<T>(v_);
-}
 void heap_init(void *start, size_t size);
 void* alloca(size_t dim);
 enum class align_val_t : size_t {};
@@ -179,6 +173,24 @@ static inline To int_cast(From* p)
 	return v;
 }
 
+/*! @brief Restituisce il più piccolo multiplo di _a_ maggiore o uguale a _v_.
+ */
+template<typename T>
+T constexpr allinea(T v, size_t a) {
+	size_t v_ = reinterpret_cast<size_t>(v);
+	v_ = (v_ % a == 0 ? v_ : ((v_ + a - 1) / a) * a);
+	return reinterpret_cast<T>(v_);
+}
+/*! @brief Restituisce il più piccolo puntatore a _T_ allineato ad _a_ e maggiore
+ *         o uguale a _p_.
+ */
+template<typename T>
+static inline T* allinea_ptr(T* p, natq a) {
+	natq v = int_cast<natq>(p);
+	v = allinea(v, a);
+	return ptr_cast<T>(v);
+}
+
 template<typename T>
 T max(T a, T b)
 {
@@ -195,9 +207,9 @@ T min(T a, T b)
 // dalla dalla libreria standard del C++). Si limitano a richiamare in
 // modo appropriato 'operator new' e 'operator delete', che devono
 // esssere definiti a parte.
-extern void *operator new(size_t s);
-extern void *operator new(size_t s, align_val_t a);
-extern void operator delete(void *p, unsigned long);
+// extern void *operator new(size_t s);
+// extern void *operator new(size_t s, align_val_t a);
+// extern void operator delete(void *p, unsigned long);
 
 // elf
 bool find_eh_frame(vaddr elf, vaddr& eh_frame, natq& eh_frame_len);
