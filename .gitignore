@@ -1,4 +1,5 @@
 objs/*
+!objs/.gitkeep
 kernel/kernel
 test/kernel_test
 user/user 
