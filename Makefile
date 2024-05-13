@@ -143,5 +143,7 @@ run: $K/kernel $U/user.strip
 debug: $K/kernel $U/user.strip
 	$(DEBUG) -kernel $K/kernel -initrd $U/user.strip
 
+libce: $(I)/libce.a
+
 clean:
-	rm -f $(ODIR)/*.o $K/kernel $T/kernel_test $U/user_test $(I)/lib*.a
+	rm -f $(ODIR)/*.o $K/kernel $U/user $U/user.strip $(I)/lib*.a
