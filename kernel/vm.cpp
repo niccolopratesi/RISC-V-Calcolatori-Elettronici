@@ -273,34 +273,34 @@ bool crea_finestra_FM(paddr root_tab)
 	// video.  Per farlo dobbiamo rinunciare a settare PS per la prima regione
 
 	// Mappa UART
-	if(map(root_tab, UART0, UART0+DIM_PAGINA, BIT_X | BIT_W | BIT_R, identity_map) != (UART0+DIM_PAGINA)){
+	if(map(root_tab, UART0, UART0+DIM_PAGINA, BIT_X | BIT_W | BIT_R | BIT_G, identity_map) != (UART0+DIM_PAGINA)){
 		return false;
 	}
 
 	// Mappa VIRTIO (al momento inutilizzato)
 	#define VIRTIO0 0x10001000L
-	if(map(root_tab, VIRTIO0, VIRTIO0+DIM_PAGINA, BIT_X | BIT_W | BIT_R, identity_map) != (VIRTIO0+DIM_PAGINA)){
+	if(map(root_tab, VIRTIO0, VIRTIO0+DIM_PAGINA, BIT_X | BIT_W | BIT_R | BIT_G, identity_map) != (VIRTIO0+DIM_PAGINA)){
 		return false;
 	}
 
 	// Mappa PLIC 
 	#define PLIC 0x0c000000L
-	if(map(root_tab, PLIC, PLIC+0x400000, BIT_X | BIT_W | BIT_R, identity_map) != (PLIC+0x400000)){
+	if(map(root_tab, PLIC, PLIC+0x400000, BIT_X | BIT_W | BIT_R | BIT_G, identity_map) != (PLIC+0x400000)){
 		return false;
 	}
 
 	// Mappa VGA
 	#define VGA_BASE 0x3000000L
 	#define FRAMEBUFFER_VGA (0x50000000 | (0xb8000 - 0xa0000))
-	if(map(root_tab, VGA_BASE, VGA_BASE+DIM_PAGINA, BIT_X | BIT_W | BIT_R, identity_map) != (VGA_BASE+DIM_PAGINA)){
+	if(map(root_tab, VGA_BASE, VGA_BASE+DIM_PAGINA, BIT_X | BIT_W | BIT_R | BIT_G, identity_map) != (VGA_BASE+DIM_PAGINA)){
 		return false;
 	}
-	if(map(root_tab, FRAMEBUFFER_VGA, FRAMEBUFFER_VGA+DIM_PAGINA, BIT_X | BIT_W | BIT_R, identity_map) != (FRAMEBUFFER_VGA+DIM_PAGINA)){
+	if(map(root_tab, FRAMEBUFFER_VGA, FRAMEBUFFER_VGA+DIM_PAGINA, BIT_X | BIT_W | BIT_R | BIT_G, identity_map) != (FRAMEBUFFER_VGA+DIM_PAGINA)){
 		return false;
 	}
 
 	// mappiamo il kernel con tabelle di livello 2
-	if (map(root_tab, KERNBASE, KERNBASE+MEM_TOT, BIT_X | BIT_W | BIT_R, identity_map, 2) != KERNBASE+MEM_TOT)
+	if (map(root_tab, KERNBASE, KERNBASE+MEM_TOT, BIT_X | BIT_W | BIT_R | BIT_G, identity_map, 2) != KERNBASE+MEM_TOT)
 		return false;
 
 	flog(LOG_INFO, "Creata finestra sulla memoria centrale:  [%p, %p)", DIM_PAGINA, KERNBASE+MEM_TOT);

@@ -300,7 +300,7 @@ vaddr carica_modulo(natq mod_start, paddr root_tab, natq flags, natq heap_size)
 			last_vaddr = virt_end;
 
 		// settiamo BIT nella traduzione
-		map_flags = flags; // BIT_U;
+		map_flags = flags | BIT_G; // BIT_U e BIT_G;
 		if (elf_ph->p_flags & PF_W)
 			map_flags |= BIT_W;
 		if (elf_ph->p_flags & PF_X)
@@ -330,7 +330,7 @@ vaddr carica_modulo(natq mod_start, paddr root_tab, natq flags, natq heap_size)
 	if (map(root_tab,
 		last_vaddr,
 		last_vaddr + heap_size,
-		flags | BIT_R | BIT_W,
+		flags | BIT_R | BIT_W | BIT_G,
 		[](vaddr) { return alloca_frame(); }) != last_vaddr + heap_size)
 		return 0;
 	flog(LOG_INFO, " - heap:                                 [%lx, %lx)",
