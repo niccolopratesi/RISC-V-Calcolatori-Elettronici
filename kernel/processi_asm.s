@@ -171,16 +171,17 @@ carica_stato:
 
 1:
 	# carica_stato si aspetta che sp punti alla pila sistema di esecuzione_precedente
-	# Spostiamo sp alla base della pila sistema di esecuzione
-	ld sp, PUNT_NUCLEO(s0) 
-
-	# Se esecuzione gira a livello sistema, sopra a punt_nucleo c'è il RA salvato da salva_stato
+	# Spostiamo sp alla base della pila sistema di esecuzione (U) o al valore di SP salvato nel contesto (S)
 	lh a1, LIVELLO(s0)
 	beqz a1, 1f
+	# Se esecuzione gira a livello sistema, sopra a SP c'è il RA salvato da salva_stato
+	ld sp, SP(s0)
 	# decrementiamo sp di 8 per farlo puntare al RA salvato da salva_stato
 	addi sp, sp, -8
-
+	j 2f
 1:
+	ld sp, PUNT_NUCLEO(s0) 
+2:
 	# se il processo precedente era terminato o abortito la sua pila
 	# sistema non era stata distrutta, in modo da permettere a noi di
 	# continuare ad usarla. Ora che abbiamo cambiato pila possiamo
