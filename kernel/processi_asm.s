@@ -174,10 +174,8 @@ carica_stato:
 	# Spostiamo sp alla base della pila sistema di esecuzione (U) o al valore di SP salvato nel contesto (S)
 	lh a1, LIVELLO(s0)
 	beqz a1, 1f
-	# Se esecuzione gira a livello sistema, sopra a SP c'è il RA salvato da salva_stato
+	# Se esecuzione gira a livello sistema, in SP c'è il RA salvato da salva_stato
 	ld sp, SP(s0)
-	# decrementiamo sp di 8 per farlo puntare al RA salvato da salva_stato
-	addi sp, sp, -8
 	j 2f
 1:
 	ld sp, PUNT_NUCLEO(s0) 
