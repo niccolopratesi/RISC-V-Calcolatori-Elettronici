@@ -123,12 +123,6 @@ extern "C" void sInterruptHandler(){
     //in modalita' supervisor con le interruzioni abilitate.
     //Prima di fare qualsiasi cosa disattiviamole.
     disableSInterrupts();
-
-    //Ripristiniamo l'interrupt handler a seconda del livello del processo in esecuzione
-    if (esecuzione->livello == LIV_UTENTE)
-        writeSTVEC((void*)s_trap);
-    else
-        writeSTVEC((void*)k_trap);
 }
 
 extern "C" void kInterruptHandler(){
@@ -158,11 +152,5 @@ extern "C" void kInterruptHandler(){
 
     // TEST: timer interrupts
     // if (dev_int() == 2) 
-    //   timer_debug();   
-
-    //Ripristiniamo l'interrupt handler a seconda del livello del processo in esecuzione
-    if (esecuzione->livello == LIV_UTENTE)
-        writeSTVEC((void*)s_trap);
-    else
-        writeSTVEC((void*)k_trap);     
+    //   timer_debug();
 }
