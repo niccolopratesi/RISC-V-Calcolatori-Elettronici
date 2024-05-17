@@ -319,14 +319,14 @@ des_proc* crea_processo(void f(natq), natq a, int prio, char liv)
 
 		// Lo stack pointer del processo utente è inizializzato al fondo della pila utente
 		// All'inizio la carica_stato si aspetta che sia salvato RA in cima alla pila utente
-		p->contesto[I_SP] = fin_utn_p - 2*sizeof(natq);
+		p->contesto[I_SP] = fin_utn_p - sizeof(natq);
 
 		p->livello = LIV_UTENTE;
 
 		// dal momento che usiamo traduzioni diverse per le parti sistema/private
 		// di tutti i processi, possiamo inizializzare p->punt_nucleo con un
 		// indirizzo (virtuale) uguale per tutti i processi
-		p->punt_nucleo = fin_sis_p - sizeof(natq);
+		p->punt_nucleo = fin_sis_p;
 
 		//   tutti gli altri campi valgono 0
 	} else {
@@ -338,7 +338,7 @@ des_proc* crea_processo(void f(natq), natq a, int prio, char liv)
 
 		// inizializziamo il descrittore di processo
 		// All'inizio la carica_stato si aspetta che sia salvato RA in cima alla pila utente
-		p->punt_nucleo = p->contesto[I_SP] = fin_sis_p - 2*sizeof(natq);
+		p->punt_nucleo = p->contesto[I_SP] = fin_sis_p - sizeof(natq);
 
 		p->livello = LIV_SISTEMA;
 
