@@ -338,7 +338,7 @@ des_proc* crea_processo(void f(natq), natq a, int prio, char liv)
 
 		// inizializziamo il descrittore di processo
 		// All'inizio la carica_stato si aspetta che sia salvato RA in cima alla pila utente
-		p->punt_nucleo = p->contesto[I_SP] = fin_sis_p - sizeof(natq);
+		p->contesto[I_SP] = fin_sis_p - sizeof(natq);
 
 		p->livello = LIV_SISTEMA;
 
