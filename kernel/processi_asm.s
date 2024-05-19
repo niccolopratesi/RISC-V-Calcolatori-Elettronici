@@ -64,6 +64,11 @@ salva_stato:
 	.cfi_adjust_cfa_offset 8
 	.cfi_offset a0, -16
 
+	# impostiamo la routine di interruzione da livello supervisor
+	# nel registro stvec
+	la a0, k_trap
+	csrw stvec, a0
+
 	la a1, esecuzione_precedente
 	ld a0, esecuzione
 	sd a0, 0(a1)

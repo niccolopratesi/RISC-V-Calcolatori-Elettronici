@@ -92,10 +92,6 @@ extern "C" void sInterruptHandler(){
     if ((readSSTATUS() & SSTATUS_SPP) != 0) 
         fpanic("usertrap: not from user mode");
 
-    //Imposta il trap vector all'handler 
-    //per il kernel
-    writeSTVEC((void*)k_trap);
-
     if (readSCAUSE() == 8) {
         // syscall dallo spazio utente
 
