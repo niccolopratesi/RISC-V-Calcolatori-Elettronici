@@ -276,8 +276,10 @@ vaddr carica_modulo(natq mod_start, paddr root_tab, natq flags, natq heap_size)
 		Elf64_Phdr* elf_ph = ptr_cast<Elf64_Phdr>(ph_addr);
 
 		// ci interessano solo i segmenti di tipo PT_LOAD
-		if (elf_ph->p_type != PT_LOAD)
+		if (elf_ph->p_type != PT_LOAD) {
+			ph_addr += elf_h->e_phentsize;
 			continue;
+		}
 
 		// i byte che si trovano ora in memoria agli indirizzi (fisici)
 		// [mod_beg, mod_end) devono diventare visibili nell'intervallo

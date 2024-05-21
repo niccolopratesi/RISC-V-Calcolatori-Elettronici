@@ -57,6 +57,12 @@ CXXFLAGS += -fno-omit-frame-pointer
 CXXFLAGS += -std=c++17
 CXXFLAGS += -ffreestanding
 CXXFLAGS += -nostdlib
+# TODO: controllare l'indirizzo di caricamento dell'initrd. In UBUNTU è diverso da Debian.
+# UBUNTU modifica USER_MOD_START in costanti.h
+ifdef UBUNTU
+CFLAGS   += -DUBUNTU
+CXXFLAGS += -DUBUNTU
+endif
 
 ASFLAGS = 		\
 	-g 			\

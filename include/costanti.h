@@ -31,7 +31,11 @@
 #define KERNBASE 0x80000000L
 // indirizzo in cui è caricato il descrittore del modulo utente
 // caricato di default a metà della memoria fisica
-#define USER_MOD_START 0x84000000L
+#ifdef UBUNTU
+    #define USER_MOD_START 0x84000000L
+#else
+    #define USER_MOD_START 0x83fff000L
+#endif
 // )
 
 // ( tipi delle primitive
