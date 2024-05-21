@@ -59,7 +59,7 @@ CXXFLAGS += -ffreestanding
 CXXFLAGS += -nostdlib
 
 ASFLAGS = 		\
-	-ggdb 		\
+	-g 			\
 	-fpic		\
 
 LDFLAGS = 		\
