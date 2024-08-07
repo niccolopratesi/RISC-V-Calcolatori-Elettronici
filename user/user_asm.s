@@ -59,13 +59,13 @@ sem_signal:
     ret
     .cfi_endproc
 
-#     .global delay
-# delay:
-#     .cfi_startproc
-#     li a7, TIPO_D 
-#     ecall
-#     ret
-#     .cfi_endproc
+    .global delay
+delay:
+    .cfi_startproc
+    li a7, TIPO_D 
+    ecall
+    ret
+    .cfi_endproc
 
     .global do_log
 do_log:

@@ -79,3 +79,11 @@ clearSSIP:
     ld a1,8(sp)
     addi sp, sp, 16
     ret
+
+.global schedule_next_timer_interrupt
+schedule_next_timer_interrupt:
+    csrr t0, stimecmp
+    li t1, 500000
+    add t0, t0, t1
+    csrw stimecmp, t0
+    ret

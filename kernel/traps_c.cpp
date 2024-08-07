@@ -5,6 +5,7 @@
 #include "plic.h"
 #include "proc.h"
 #include "semafori.h"
+#include "timer.h"
 #include "sys.h"
 
 void timer_debug(){
@@ -12,7 +13,7 @@ void timer_debug(){
 }
 
 /// @brief Gestore delle interruzioni (flag in sscause = 1)
-/// @return 1 se interruzione esterna, 2 se software, 0 altrimenti
+/// @return 1 se interruzione esterna, 2 se software, 3 se timer, 0 altrimenti
 int dev_int() {
 
     natq scause = readSCAUSE();
@@ -40,8 +41,18 @@ int dev_int() {
         return 2;
     }
 
-    else
-        return 0;
+    // Interruzione timer
+    if (scause == 0x8000000000000005L) {
+        // TEST: timer interrupts
+        // timer_debug();
+
+        schedule_next_timer_interrupt();
+        c_driver_td();
+
+        return 3;
+    }
+
+    return 0;
 }
 
 /// Legge il numero della syscall in a7 e chiama la funzione corrispondente
@@ -69,9 +80,9 @@ void syscall(void)
     case TIPO_S:
         c_sem_signal(p->contesto[I_A0]);
         break;
-    // case TIPO_D:
-    //     c_delay(p->contesto[I_A0]);
-    //     break;
+    case TIPO_D:
+        c_delay(p->contesto[I_A0]);
+        break;
     case TIPO_L:
         c_do_log((log_sev)p->contesto[I_A0], (const char*)p->contesto[I_A1], p->contesto[I_A2]);
         break;
@@ -146,7 +157,4 @@ extern "C" void kInterruptHandler(){
         fpanic("kerneltrap");
     }
 
-    // TEST: timer interrupts
-    // if (dev_int() == 2) 
-    //   timer_debug();
 }
