@@ -99,7 +99,6 @@ void syscall(void)
 /// Parte C++ del gestore delle interruzioni in modalità supervisor dal modulo utente
 /// Raccoglie l'interruzione e imposta il trap vector al gestore k_trap
 extern "C" void sInterruptHandler(){
-
     if ((readSSTATUS() & SSTATUS_SPP) != 0) 
         fpanic("usertrap: not from user mode");
 
