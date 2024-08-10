@@ -1,38 +1,24 @@
-.global k_trap
 .equ TIMER_DELAY, 500000
+
 .global start
 start:
-  # set M Previous mode to Supervisor for mret
-  csrr a0, mstatus
-  li a1, 0x1800
-  xori a1, a1, -1
-  and a0, a0, a1
-  li a1, 0x802
-  or a0, a0, a1
-  csrw mstatus, a0
-
-  # set M Exception Program Counter to boot_main
-  # boot_main() defined in boot_main.c
-  la a0, boot_main
-  csrw mepc, a0
-  # disable paging
-  li a0, 0x0
-  csrw satp, a0
-
   # Init interrupt ###
 
   # Disable current privilege interrupts
-  li t0, 0b1010
-  csrc mstatus, t0
+  csrci mstatus, 0b1010
 
   # Disable machine mode interrupts
   li t0, 0
   csrw mie, t0
 
   # delegate all interrupts and exceptions to supervisor mode
-  li a0, 0xffff
-  csrw medeleg, a0
-  csrw mideleg, a0
+  li t0, 0xffffffffffffffff
+  csrw medeleg, t0
+  csrw mideleg, t0
+
+  # set machine_handler as Machine interrupt handler
+  la t0, machine_interrupts
+  csrw mtvec, t0
 
   # Enable Supervisor Mode Interrupts
   li t0, 0b1000100010
@@ -46,17 +32,15 @@ start:
 
   # configure physical memory protection to access to all
   # physical Memory
-  li a0, 0x3fffffffffffffULL
-  csrw pmpaddr0, a0
-  li a0, 0xf
-  csrw pmpcfg0, a0
+  li t0, 0x3fffffffffffff
+  csrw pmpaddr0, t0
+  li t0, 0xf
+  csrw pmpcfg0, t0
 
   # Enable memory access at S-mode when BIT_U=1 
   # Set the SUM bit (18) in sstatus 
-  csrr a0, sstatus
-  li a1, 0x40000
-  or a0, a0, a1
-  csrw sstatus, a0
+  li t0, 0x40000
+  csrs sstatus, t0
 
   # Init timer #####
   
@@ -71,7 +55,26 @@ start:
   csrw stimecmp, t1   # Save the next cycle into the stimecmp csr
 
   # Enable time and stimecmp CSRs to be visibe in supervisor mode
-  li t0, 0b10
-  csrs mcounteren, t0
+  csrsi mcounteren, 0b10
+
+  # Give control to boot_main() ###
+
+  # clear M previous interrupt enable bit
+  li t0, 0x80
+  csrc mstatus, t0
+
+  # set M Previous mode to Supervisor for mret
+  li t0, 0x1000
+  csrc mstatus, t0
+  li t0, 0x800
+  csrs mstatus, t0
+
+  # set M Exception Program Counter to boot_main
+  # boot_main() defined in boot_main.c
+  la t0, boot_main
+  csrw mepc, t0
+  # disable paging
+  li t0, 0x0
+  csrw satp, t0
 
   mret
