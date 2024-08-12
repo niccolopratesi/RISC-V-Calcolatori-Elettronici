@@ -64,11 +64,6 @@ salva_stato:
 	.cfi_adjust_cfa_offset 8
 	.cfi_offset a0, -16
 
-	# impostiamo la routine di interruzione da livello supervisor
-	# nel registro stvec
-	la a0, k_trap
-	csrw stvec, a0
-
 	la a1, esecuzione_precedente
 	ld a0, esecuzione
 	sd a0, 0(a1)
@@ -211,28 +206,22 @@ carica_stato:
 	csrw sepc, a1
 	
 	## Settiamo sstaus.spp a 0 se il processo è utente, 1 se è sistema
-	## Settiamo stvec a s_trap se il processo è utente, a k_trap se è sistema
 	lh a1, LIVELLO(s0)
 	# Salviamo il contenuto attuale di RA per non farcelo sovrascrivere dalla call
 	addi sp, sp, -8
 	sd ra, 0(sp)
-	# se a1 = 0 (utente => clear SPP, s_trap)
+	# se a1 = 0 (utente => clear SPP)
 	beqz a1, 1f
-	# se a1 = 1 (sistema => set SPP, k_trap)
+	# se a1 = 1 (sistema => set SPP)
 	call setSPreviousPrivilege
-	la a0, k_trap
-	csrw stvec, a0
 	j 2f
 1:
 	# livello utente
 	call clearSPreviousPrivilege
-	la a0, s_trap
-	csrw stvec, a0
 2:	
 	# Ripristiniamo RA
 	ld ra, 0(sp)
 	addi sp, sp, 8
-
 
 	## Settiamo sstatus.spie al valore salvato nel des_proc
 	lw a1, SPIE(s0)
