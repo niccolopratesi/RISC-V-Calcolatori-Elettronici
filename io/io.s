@@ -151,3 +151,18 @@ access:
 ///////////////////////////////////////////////////////////////////////////////////
 //                               PRIMITIVE DI IO                                 //
 ///////////////////////////////////////////////////////////////////////////////////
+
+ .extern c_iniconsole
+a_iniconsole:
+    .cfi_startproc
+
+    addi sp,sp,-8
+    sd ra,0(sp)
+
+    call c_iniconsole
+
+    ld ra,0(sp)
+    addi sp,sp,8
+    
+    sret
+    .cfi_endproc

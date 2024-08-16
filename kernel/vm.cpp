@@ -197,7 +197,7 @@ void set_des(paddr dst, natl i, natl n, tab_entry e)
 	}
 }
 
-// restituisce true sse v appartiene alla parte utente/condivisa
+// restituisce true se v appartiene alla parte utente/condivisa
 bool in_utn_c(vaddr v)
 {
 	return v >= ini_utn_c && v < fin_utn_c;
@@ -289,15 +289,25 @@ bool crea_finestra_FM(paddr root_tab)
 		return false;
 	}
 
+	//Mappa PCIe-ECAM
+	if(map(root_tab, PCI_ECAM, PCI_ECAM+PCI_ECAM_SIZE, BIT_X | BIT_W | BIT_R | BIT_G, identity_map) != (PCI_ECAM+PCI_ECAM_SIZE)){
+		return false;
+	}
+
+	//Mappa PCIe-MMIO
+	if(map(root_tab, PCI_MMIO, PCI_MMIO+PCI_MMIO_SIZE, BIT_X | BIT_W | BIT_R | BIT_G, identity_map) != (PCI_MMIO+PCI_MMIO_SIZE)){
+		return false;
+	}
+
 	// Mappa VGA
-	#define VGA_BASE 0x3000000L
+	/* #define VGA_BASE 0x3000000L
 	#define FRAMEBUFFER_VGA (0x50000000 | (0xb8000 - 0xa0000))
 	if(map(root_tab, VGA_BASE, VGA_BASE+DIM_PAGINA, BIT_X | BIT_W | BIT_R | BIT_G, identity_map) != (VGA_BASE+DIM_PAGINA)){
 		return false;
 	}
 	if(map(root_tab, FRAMEBUFFER_VGA, FRAMEBUFFER_VGA+DIM_PAGINA, BIT_X | BIT_W | BIT_R | BIT_G, identity_map) != (FRAMEBUFFER_VGA+DIM_PAGINA)){
 		return false;
-	}
+	} */
 
 	// mappiamo il kernel con tabelle di livello 2
 	if (map(root_tab, KERNBASE, KERNBASE+MEM_TOT, BIT_X | BIT_W | BIT_R | BIT_G, identity_map, 2) != KERNBASE+MEM_TOT)

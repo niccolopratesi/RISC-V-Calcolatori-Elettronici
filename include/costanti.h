@@ -27,6 +27,19 @@
 #define DIM_SYS_STACK		(4*KiB)
 // numero massimo di prd usati da dmaread/dmawrite
 #define MAX_PRD			16
+
+//indirizzo inizio PCIe-ECAM
+#define PCI_ECAM 0x30000000L
+//dimensione spazio PCIe-ECAM
+#define PCI_ECAM_SIZE 0x10000000L
+//indirizzo inizio PCIe-MMIO
+#define PCI_MMIO 0x40000000L
+//dimensione spazio PCIe-MMIO
+#define PCI_MMIO_SIZE 0x40000000L
+
+//indirizzo VGA buffer
+#define VGA_FRAMEBUFFER 0x50000000L
+
 // indirizzo dal quale e' montato il kernel
 #define KERNBASE 0x80000000L
 // indirizzo in cui è caricato il descrittore del modulo utente
