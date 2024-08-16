@@ -1,6 +1,7 @@
 K=kernel
 U=user
 I=include
+IO=io
 ODIR=objs
 
 _OBJS = $(patsubst $(K)/%.c,%.o,$(wildcard $(K)/*.c)) $(patsubst $(K)/%.s,%.o,$(wildcard $(K)/*.s)) $(patsubst $(K)/%.cpp,%.o,$(wildcard $(K)/*.cpp))
@@ -8,6 +9,9 @@ OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
 _USEROBJS = $(patsubst $(U)/%.c,%.o,$(wildcard $(U)/*.c)) $(patsubst $(U)/%.s,%.o,$(wildcard $(U)/*.s)) $(patsubst $(U)/%.cpp,%.o,$(wildcard $(U)/*.cpp))
 USEROBJS = $(patsubst %,$(ODIR)/%,$(_USEROBJS))
+
+_IO_OBJS = $(patsubst $(IO)/%.c,%.o,$(wildcard $(IO)/*.c)) $(patsubst $(IO)/%.s,%.o,$(wildcard $(IO)/*.s)) $(patsubst $(IO)/%.cpp,%.o,$(wildcard $(IO)/*.cpp))
+IO_OBJS = $(patsubst %,$(ODIR)/%,$(_IO_OBJS))
 
 LIBCE_CXX_SOURCES:=$(wildcard libCE/*.cpp)
 LIBCE_AS_SOURCES:=$(wildcard libCE/as/*.s)
@@ -117,6 +121,15 @@ $(ODIR)/%.o: $U/%.cpp
 $(ODIR)/%.o: $U/%.s
 	$(AS) $(ASFLAGS) $< -o $@
 
+$(ODIR)/%.o: $(IO)/%.c
+	$(CC) -c $(CFLAGS) $< -o $@
+
+$(ODIR)/%.o: $(IO)/%.cpp
+	$(CXX) -c $(CXXFLAGS) $< -o $@
+
+$(ODIR)/%.o: $(IO)/%.s
+	$(AS) $(ASFLAGS) $< -o $@
+
 $(ODIR)/%.o: libCE/%.cpp
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
@@ -126,6 +139,7 @@ $(ODIR)/%.o: libCE/as/%.s
 
 
 STARTUSER = 0xffff800000001000
+START_IO = ???
 
 $(I)/libce.a: $(LIBCE_OBJECTS) $(HEADERS)
 	$(TOOLPREFIX)ar rcs $@ $(LIBCE_OBJECTS)
@@ -139,16 +153,25 @@ $U/user: $(USEROBJS) $(HEADERS) $(I)/libce.a
 $U/%.strip: $U/%
 	$(STRIP) -s $< -o $@
 
+$(IO)/io: $(IO_OBJS) $(HEADERS) $(I)/libce.a
+	$(LD) $(LDFLAGS) -Ttext $(START_IO) -o $@ $(IO_OBJS) $(LDLIBS)
 
-compile: $K/kernel $U/user.strip
+$(IO)/%.strip: $(IO)/%
+	$(STRIP) -s $< -o $@
 
-run: $K/kernel $U/user.strip
-	$(RUN) -kernel $K/kernel -initrd $U/user.strip
 
-debug: $K/kernel $U/user.strip
-	$(DEBUG) -kernel $K/kernel -initrd $U/user.strip
+compile: $K/kernel $U/user.strip $(IO)/io.strip
+
+run: $K/kernel $U/user.strip $(IO)/io.strip
+	$(RUN) -kernel $K/kernel -initrd $U/user.strip -initrd $(IO)/io.strip
+
+debug: $K/kernel $U/user.strip $(IO)/io.strip
+	$(DEBUG) -kernel $K/kernel -initrd $U/user.strip -initrd $(IO)/io.strip
 
 libce: $(I)/libce.a
 
+#keeps make from doing something with a file named clean
+.PHONY: clean
+
 clean:
-	rm -f $(ODIR)/*.o $K/kernel $U/user $U/user.strip $(I)/lib*.a
+	rm -f $(ODIR)/*.o $K/kernel $U/user $U/user.strip $(IO)/io $(IO)/io.strip $(I)/lib*.a

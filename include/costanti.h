@@ -36,6 +36,9 @@
 #else
     #define USER_MOD_START 0x83fff000L
 #endif
+// indirizzo in cui è caricato il descrittore del modulo io
+// caricato di default a --------
+#define IO_MOD_START 0x8
 // )
 
 // ( tipi delle primitive

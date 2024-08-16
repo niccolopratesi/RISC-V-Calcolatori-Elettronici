@@ -84,7 +84,7 @@ extern "C" int boot_main(){
 
 	// Successo!
 	printf("\nPaging enabled. Hi from Virtual Memory!\n\r");
-  flog(LOG_INFO, "Attivata paginazione");
+    flog(LOG_INFO, "Attivata paginazione");
 
 	// anche se il primo processo non è completamente inizializzato,
 	// gli diamo un identificatore, in modo che compaia nei log
@@ -97,7 +97,7 @@ extern "C" int boot_main(){
 	flog(LOG_INFO, "Nucleo di Calcolatori Elettronici - RISC-V");
 
 	// Usiamo come heap la parte di memoria comresa tra __heap_start e __heap_start + HEAP_SIZE
-  heap_start = allinea(reinterpret_cast<void*>(&__heap_start), DIM_PAGINA);
+    heap_start = allinea(reinterpret_cast<void*>(&__heap_start), DIM_PAGINA);
 	heap_init(heap_start, HEAP_SIZE);
 	flog(LOG_INFO, "Heap del modulo sistema: [%p, %p)", heap_start, heap_start + HEAP_SIZE);
 
@@ -139,7 +139,7 @@ extern "C" int boot_main(){
 	// Lo selezioniamo:
 	schedulatore();
 	// e poi carichiamo il suo stato. La funzione salta_a_main(), definita
-	// in sistema.s, contiene solo 'call carica_stato; iretq'.
+	// in processi_asm.s, contiene solo 'call carica_stato; iretq'.
 	salta_a_main();
 
   
@@ -152,18 +152,38 @@ error:
 /// @brief Entry point del modulo IO
 ///
 /// @note Inizializzato da crea_spazio_condiviso().
-// void (*io_entry)(natq);
+void (*io_entry)(natq);
 
 /// @brief Entry point del modulo utente
 ///
 /// @note Inizializzato da crea_spazio_condiviso().
 void (*user_entry)(natq);
+
 extern void test_keyboard_c();
 
 /// @brief Corpo del processo main_sistema
 void main_sistema(natq)
 {
-  natl id;
+  	natl id;
+	// inizializzazione del modulo I/O
+	// creiamo un processo che esegua la procedura start del modulo I/O
+	// Usiamo un semaforo di sincronizzazione per sapere quando
+	// l'inizializzazione è terminata
+
+	flog(LOG_INFO,"Creo il processo main I/O");
+	natl sync_io = sem_ini(0);
+	if (sync_io == 0xFFFFFFFF) {
+		flog(LOG_ERR, "impossibile allocare il semaforo di sincr per I/O");
+		goto error;
+	}
+	id = activate_p(io_entry, sync_io, MAX_EXT_PRIO LIV_SISTEMA);
+	if (id == 0xFFFFFFFF) {
+		flog(LOG_ERR, "impossibile creare il processo main I/O");
+		goto error;
+	}
+	flog(LOG_INFO,"attendo inizializzazione modulo I/O");
+	sem_wait(sync_io);
+
 	// creazione del processo main utente
 	flog(LOG_INFO, "Creo il processo main utente");
 	id = activate_p(user_entry, 0, MAX_PRIORITY, LIV_UTENTE);
@@ -347,11 +367,11 @@ vaddr carica_modulo(natq mod_start, paddr root_tab, natq flags, natq heap_size)
  *  @return indirrizzo virtuale dell'entry point del modulo I/O,
  *  	   o zero in caso di errore
  */
-// vaddr carica_IO(boot64_modinfo* mod, paddr root_tab)
-// {
-// 	flog(LOG_INFO, "mappo il modulo I/O:");
-// 	return carica_modulo(mod, root_tab, 0, DIM_IO_HEAP);
-// }
+ vaddr carica_IO(paddr root_tab)
+ {
+ 	flog(LOG_INFO, "mappo il modulo I/O:");
+ 	return carica_modulo(IO_MOD_START, root_tab, 0, DIM_IO_HEAP);
+ }
 
 /*! @brief Mappa il modulo utente.
  *  @param mod informazioni sul modulo caricato dal boot loader
@@ -367,9 +387,9 @@ vaddr carica_utente(paddr root_tab)
 
 bool crea_spazio_condiviso(paddr root_tab)
 {
-	// io_entry = ptr_cast<void(natq)>(carica_IO(&mod[1], root_tab));
-	// if (!io_entry)
-	// 	return false;
+	io_entry = ptr_cast<void(natq)>(carica_IO(root_tab));
+	if (!io_entry)
+		return false;
 	user_entry = ptr_cast<void(natq)>(carica_utente(root_tab));
 	if (!user_entry)
 		return false;
