@@ -278,14 +278,12 @@ bool crea_finestra_FM(paddr root_tab)
 	}
 
 	// Mappa VIRTIO (al momento inutilizzato)
-	#define VIRTIO0 0x10001000L
 	if(map(root_tab, VIRTIO0, VIRTIO0+DIM_PAGINA, BIT_X | BIT_W | BIT_R | BIT_G, identity_map) != (VIRTIO0+DIM_PAGINA)){
 		return false;
 	}
 
 	// Mappa PLIC 
-	#define PLIC 0x0c000000L
-	if(map(root_tab, PLIC, PLIC+0x400000, BIT_X | BIT_W | BIT_R | BIT_G, identity_map) != (PLIC+0x400000)){
+	if(map(root_tab, PLIC, PLIC+PLIC_SIZE, BIT_X | BIT_W | BIT_R | BIT_G, identity_map) != (PLIC+PLIC_SIZE)){
 		return false;
 	}
 

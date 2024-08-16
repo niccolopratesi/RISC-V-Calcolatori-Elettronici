@@ -28,6 +28,14 @@
 // numero massimo di prd usati da dmaread/dmawrite
 #define MAX_PRD			16
 
+
+
+//indirizzo inizio PLIC
+#define PLIC 0x0c000000L
+//dimensione spazio riservato al PLIC
+#define PLIC_SIZE 0x400000L
+//indirizzo inizio VIRTIO0
+#define VIRTIO0 0x10001000L
 //indirizzo inizio PCIe-ECAM
 #define PCI_ECAM 0x30000000L
 //dimensione spazio PCIe-ECAM
