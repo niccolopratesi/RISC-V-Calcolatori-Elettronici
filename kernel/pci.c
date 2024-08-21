@@ -41,7 +41,7 @@ struct PCI_config{
 };
 
 void pci_init(){
-/*  
+
   // buffer per la vga
   //natq vga_frame_buffer = VGA_FRAMEBUFFER;
 
@@ -62,14 +62,6 @@ void pci_init(){
       // PCI device ID 1111:1234 is VGA
       // VGA is at 00:01.0, using extended control registers (4096 bytes)
 
-      // command and status register.
-      // bit 0 : I/O access enable
-      // bit 1 : memory access enable
-      // bit 2 : enable mastering
-
-      //abilitiamo accessi in memoria per il dispositivo
-      base[1] = base[1] | 0x2;
-
       for(int i = 0; i < 6; i++){
         natl old = base[4+i];
 
@@ -85,6 +77,14 @@ void pci_init(){
       // tell the VGA to set up I/O ports at 0x40000000
       base[4+2] = VGA_MMIO_PORTS;
 
+      // command and status register.
+      // bit 0 : I/O access enable
+      // bit 1 : memory access enable
+      // bit 2 : enable mastering
+      //abilitiamo accessi in memoria per il dispositivo (bit 1)
+      //nel command register
+      base[1] = base[1] | 0x2;
+
       //setup video mode
       //enable LFB and 8-bit DAC via 0xb0c3 bochs register
       natw* bochs_pointer = (natw*) (VGA_MMIO_PORTS+0x508);
@@ -94,5 +94,5 @@ void pci_init(){
       break;
     }
   }
-*/
+
 }

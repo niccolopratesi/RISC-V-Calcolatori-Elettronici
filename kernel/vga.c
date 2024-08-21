@@ -22,16 +22,18 @@
 #include "uart.h"
 #include "font.h"
 #include "palette.h"
+#include "costanti.h"
 
 /*
 standard vga ports
-#define AC 0x3c0
-#define MISC 0x3c2
-#define SEQ 0x3c4
-#define GC 0x3ce
-#define CRTC 0x3d4
-#define PC 0x3c8
-#define PD 0x3c9
+#define AC 0x3c0   //attribute or palette registers
+#define MISC 0x3c2 //miscellaneous
+#define SEQ 0x3c4  //sequencer
+#define GC 0x3ce   //graphic address register
+#define CRTC 0x3d4 //controller address register
+#define PC 0x3c8   //PEL write index
+#define PD 0x3c9   //PEL write data
+#define INPUT_STATUS_REGISTER 0x3da
 */
 
 #define VGA_TEXT_HEIGHT 25
@@ -44,7 +46,7 @@ standard vga ports
 #define CRTC 0x414
 #define PC 0x408
 #define PD 0x409
-
+#define INPUT_STATUS_REGISTER 0x41a
 
 
 natb readport(natl port, natb index);
@@ -90,62 +92,67 @@ void vga_init(char *vga_framebuffer) {
 
 natb readport(natl port, natb index) {
   natb read;
-  discard = VGA_BASE[0x3da];
+  //reset to index mode
+  discard = VGA_BASE[INPUT_STATUS_REGISTER];
+
   switch (port) {
-  case AC:
-    VGA_BASE[AC] = index;
-    read = VGA_BASE[0x3c1];
-    break;
-  case 0x3c2:
-    read = VGA_BASE[0x3cc];
-    break;
-  case 0x3c4:
-  case 0x3ce:
-  case 0x3d4:
-    VGA_BASE[port] = index;
-    read = VGA_BASE[port + 1];
-    break;
-  case 0x3d6:
-    read = VGA_BASE[0x3d6];
-    break;
-  case PD:
-    read = VGA_BASE[PD];
-    break;
-  default:
-    read = 0xff;
-    break;
+    case AC:
+      VGA_BASE[AC] = index;
+      read = VGA_BASE[0x3c1];
+      break;
+    case 0x3c2:
+      read = VGA_BASE[0x3cc];
+      break;
+    case 0x3c4:
+    case 0x3ce:
+    case 0x3d4:
+      VGA_BASE[port] = index;
+      read = VGA_BASE[port + 1];
+      break;
+    case 0x3d6:
+      read = VGA_BASE[0x3d6];
+      break;
+    case PD:
+      read = VGA_BASE[PD];
+      break;
+    default:
+      read = 0xff;
+      break;
   }
-  discard = VGA_BASE[0x3da];
+  discard = VGA_BASE[INPUT_STATUS_REGISTER];
   return read;
 }
 
 void writeport(natl port, natb index, natb val) {
-  discard = VGA_BASE[0x3da];
+  //reset AC to index mode
+  discard = VGA_BASE[INPUT_STATUS_REGISTER];
+
   switch (port) {
-  case AC:
-    VGA_BASE[AC] = index;
-    VGA_BASE[AC] = val;
-    break;
-  case 0x3c2:
-    VGA_BASE[0x3c2] = val;
-    break;
-  case 0x3c4:
-  case 0x3ce:
-  case 0x3d4:
-    VGA_BASE[port] = index;
-    VGA_BASE[port + 1] = val;
-    break;
-  case 0x3d6:
-  case 0x3d5:
-    VGA_BASE[0x3d6] = val;
-    break;
-  case 0x3c7:
-  case 0x3c8:
-  case PD:
-    VGA_BASE[port] = val;
-    break;
+    case AC:
+      VGA_BASE[AC] = index;
+      VGA_BASE[AC] = val;
+      break;
+    case 0x3c2:
+      VGA_BASE[0x3c2] = val;
+      break;
+    case 0x3c4:
+    case 0x3ce:
+    case 0x3d4:
+      VGA_BASE[port] = index;
+      VGA_BASE[port + 1] = val;
+      break;
+    case 0x3d5:
+      VGA_BASE[0x3d6] = val;
+      break;
+    case 0x3d6:
+    case 0x3c7:
+    case 0x3c8:
+    case PD:
+      VGA_BASE[port] = val;
+      break;
   }
-  discard = VGA_BASE[0x3da];
+  //reset AC to index mode
+  discard = VGA_BASE[INPUT_STATUS_REGISTER];
 }
 
 void init_AC(){
@@ -190,11 +197,13 @@ void init_GC(){
   writeport(GC, 0x05, 0x10);
   writeport(GC, 0x06, 0x0E);
   writeport(GC, 0x07, 0x0F);
+  //writeport(GC, 0x07, 0x00);     ignorare o no i plane per comparare col colore?
   writeport(GC, 0x08, 0xFF);
 }
 
 void init_CRTC(){
   writeport(CRTC, 0x11, 0x00);
+  //writeport(CRTC, 0x11, 0x0E);  dovrebbero funzionare entrambi
 
   writeport(CRTC, 0x00, 0x5f);
   writeport(CRTC, 0x01, 0x4f);
@@ -214,6 +223,7 @@ void init_CRTC(){
   writeport(CRTC, 0x0d, 0x00);
   writeport(CRTC, 0x0e, 0x00);
   writeport(CRTC, 0x0f, 0x00);
+  //writeport(CRTC, 0x0f, 0x50);
 
   writeport(CRTC, 0x10, 0x9C);
   writeport(CRTC, 0x11, 0x8E);
@@ -424,13 +434,21 @@ void init_PD(){
 
 void load_font(unsigned char* font_16){
   VGA_BASE[PC] = 0x0;
+  //load palette
   init_PD();
+
   writeport(MISC, 0x00, 0x67);
-  VGA_BASE[AC] = 0x20;
+  //set bit PAS -> load color values into internal palette registers
+  VGA_BASE[AC] = 0x20;  
+  //modalità di accesso sequenziale
   writeport(SEQ, 0x04, 0x06);
+  //display disable
   writeport(SEQ, 0x01, 0x23);
+  //azzeriamo il graphics mode register
   writeport(GC, 0x05, 0x00);
+  //selezioniamo zona a0000-affff e abilitiamo modalità grafica
   writeport(GC, 0x06, 0x05);
+  //selezioniamo plane 2
   writeport(SEQ, 0x02, 0x04);
 
   volatile void *vga_buf = (void *)(0x50000000); // 0xa0000
@@ -540,13 +558,18 @@ void print_VGA(char *message, natb fg, natb bg)
 
 void init_textmode_80x25(){
   writeport(SEQ, 0x00, 0x01);
+  //writeport(SEQ, 0x00, 0x02);    --check documentation
+
   writeport(MISC, 0x00, 0xc3);
-  writeport(SEQ, 0x00, 0x03);
-  init_AC();
+  //writeport(MISC, 0x00, 0x67);   --check documentation
+
   init_SEQ();
-  init_GC();
   init_CRTC();
+  init_GC();
+  init_AC();
+
   load_font(font_16);
+  //rigenera registri
   post_font();
 }
 

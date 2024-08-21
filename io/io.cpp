@@ -136,14 +136,11 @@ extern "C" void panic(const char* msg){
  */
 extern "C" void main(natq sem_io) {
     
-
-
     flog(LOG_INFO,"inizializzo la console (kbd + video)");
     if(!console_init()){
         panic("inizializzazione console fallita");
     }
-
-
+    
     flog(LOG_INFO,"inizializzazione modulo I/O completata");
     sem_signal(sem_io);
     terminate_p();
