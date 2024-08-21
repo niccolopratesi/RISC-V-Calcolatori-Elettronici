@@ -316,7 +316,7 @@ vaddr map(paddr tab, vaddr begin, vaddr end, natl flags, T& getpaddr, int ps_lvl
 	const char *err_msg = "";
 	natq allowed_flags = BIT_G | BIT_U | BIT_X | BIT_W | BIT_R;
 
-	static unsigned long count = 0;
+	int count = 0;
 	
 	// controlliamo che ps_lvl abbia uno dei valori consentiti
 	if (ps_lvl < 1 || ps_lvl > MAX_PS_LVL) {
@@ -339,8 +339,6 @@ vaddr map(paddr tab, vaddr begin, vaddr end, natl flags, T& getpaddr, int ps_lvl
 	if (flags & ~allowed_flags) {
 		fpanic("map: flags contiene bit non validi: %x", flags & ~allowed_flags);
 	}
-	//natq* pointer = (natq*)0x80218278;
-    //flog(LOG_INFO,"contenuto indirizzo incriminato: %p",*pointer);
 
 	// usiamo un tab_iter per percorrere tutto il sottoalbero.  Si noti che
 	// il sottoalbero verrà costruito man mano che lo visitiamo.
@@ -359,10 +357,6 @@ vaddr map(paddr tab, vaddr begin, vaddr end, natl flags, T& getpaddr, int ps_lvl
 		// new_f diventerà diverso da 0 se dobbiamo settare a 1 il bit
 		// P di 'e'
 		paddr new_f = 0;
-
-		/*if(v > 0x4b000000){flog(LOG_WARN,"entrata %p\n",e);
-			flog(LOG_WARN,"entrata indirizzo %p\n",&e);
-		}*/
 		
 		if (l > ps_lvl) {
 			// per tutti i livelli non "foglia" allochiamo la
@@ -371,11 +365,7 @@ vaddr map(paddr tab, vaddr begin, vaddr end, natl flags, T& getpaddr, int ps_lvl
 			// tabella potrebbe esistere già, e in quel caso non
 			// facciamo niente)
 			if (!(e & BIT_V)) {
-				//natq* pointer = (natq*)0x80218000;
-    			//flog(LOG_INFO,"contenuto indirizzo incriminato: %p",*pointer);
 				new_f = alloca_tab();
-				//flog(LOG_INFO,"indirizzo tabella: %p",new_f);
-				//flog(LOG_INFO,"contenuto indirizzo incriminato dopo alloca: %p",*pointer);
 				
 				if (!new_f) {
 					err_msg = "impossibile allocare tabella";
@@ -390,7 +380,6 @@ vaddr map(paddr tab, vaddr begin, vaddr end, natl flags, T& getpaddr, int ps_lvl
 			// traduzione vera e propria.
 			if (e & BIT_V) {
 				err_msg = "gia' mappato per bit V";
-				flog(LOG_ERR,"count:%p, entry: %p, entry address: %p", count,e, &e);
 				goto error;
 			}
 			// otteniamo il corrispondente indirizzo fisico
@@ -404,9 +393,7 @@ vaddr map(paddr tab, vaddr begin, vaddr end, natl flags, T& getpaddr, int ps_lvl
 			// settiamo i bit dei flag richiesti
 			e |= flags;
 
-			//if(v > 0x4b000000){flog(LOG_WARN,"mappo indirizzo %p\n",v);}
 			count++;
-			
 		}
 		if (new_f) {
 			// 'e' non puntava a niente e ora deve puntare a new_f
