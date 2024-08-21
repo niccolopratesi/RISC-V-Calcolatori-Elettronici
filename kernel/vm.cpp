@@ -97,8 +97,8 @@ void init_frame()
 }
 
 // estrae un frame libero dalla lista, se non vuota
-paddr alloca_frame()
-{
+paddr alloca_frame(){
+
 	if (!num_frame_liberi) {
 		flog(LOG_ERR, "out of memory");
 		return 0;
@@ -111,8 +111,8 @@ paddr alloca_frame()
 }
 
 // rende di nuovo libero il frame descritto da df
-void rilascia_frame(paddr f)
-{
+void rilascia_frame(paddr f){
+
 	natq j = (f-0x80000000) / DIM_PAGINA;
 	if (j < N_M1) {
 		fpanic("tentativo di rilasciare il frame %p di M1", f);
@@ -148,9 +148,9 @@ paddr alloca_tab()
 {
 	paddr f = alloca_frame();
 	if (f) {
-		memset(reinterpret_cast<void*>(f), 0, DIM_PAGINA);
+		memset(voidptr_cast(f), 0, DIM_PAGINA);
+		vdf[f / DIM_PAGINA].nvalide = 0;
 	}
-	vdf[f / DIM_PAGINA].nvalide = 0;
 	return f;
 }
 
@@ -293,7 +293,7 @@ bool crea_finestra_FM(paddr root_tab)
 	}
 
 	//Mappa PCIe-MMIO
-	if(map(root_tab, PCI_MMIO, PCI_MMIO+PCI_MMIO_SIZE, BIT_X | BIT_W | BIT_R | BIT_G, identity_map) != (PCI_MMIO+PCI_MMIO_SIZE)){
+	if(map(root_tab, PCI_MMIO, PCI_MMIO+PCI_MMIO_SIZE, BIT_X | BIT_W | BIT_R | BIT_G, identity_map,2) != (PCI_MMIO+PCI_MMIO_SIZE)){
 		return false;
 	}
 

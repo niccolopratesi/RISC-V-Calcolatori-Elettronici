@@ -53,37 +53,36 @@ extern "C" void salta_a_main();
 /// il file start.s salta a boot_main
 extern "C" int boot_main(){
 
-  natl mid, dummy_id;
-  void *heap_start;
+	natl mid, dummy_id;
+	void *heap_start;
 
-  flog(LOG_INFO, "Running in S-Mode");
+	flog(LOG_INFO, "Running in S-Mode");
 
-  pci_init();
-  flog(LOG_INFO, "PCI initialized");
-  flog(LOG_INFO, "VGA inizialized");
+	pci_init();
+	flog(LOG_INFO, "PCI initialized");
 
-  plic_init();
-  flog(LOG_INFO, "PLIC Initialized");
+	plic_init();
+	flog(LOG_INFO, "PLIC Initialized");
 
-  // Inizializzazione dei frame della parte M2
-  init_frame();
-
-  // creiamo le parti condivise della memoria virtuale di tutti i processi
+	// Inizializzazione dei frame della parte M2
+	init_frame();
+	
+	// creiamo le parti condivise della memoria virtuale di tutti i processi
 	// le parti sis/priv e usr/priv verranno create da crea_processo()
 	// ogni volta che si attiva un nuovo processo
 	paddr root_tab = alloca_tab();
 	if (!root_tab)
-    goto error;
+	goto error;
 	flog(LOG_INFO, "Allocata tabella root");
 	// finestra di memoria, che corrisponde alla parte sis/cond
 	if(!crea_finestra_FM(root_tab))
-    goto error;
+	goto error;
 
 	// Attivazione paginazione
 	writeSATP(root_tab);
 
 	// Successo!
-	printf("\nPaging enabled. Hi from Virtual Memory!\n\r");
+	//printf("\nPaging enabled. Hi from Virtual Memory!\n\r");
     flog(LOG_INFO, "Attivata paginazione");
 
 	// anche se il primo processo non è completamente inizializzato,
@@ -176,7 +175,7 @@ void main_sistema(natq)
 		flog(LOG_ERR, "impossibile allocare il semaforo di sincr per I/O");
 		goto error;
 	}
-	id = activate_p(io_entry, sync_io, MAX_EXT_PRIO LIV_SISTEMA);
+	id = activate_p(io_entry, sync_io, MAX_EXT_PRIO, LIV_SISTEMA);
 	if (id == 0xFFFFFFFF) {
 		flog(LOG_ERR, "impossibile creare il processo main I/O");
 		goto error;

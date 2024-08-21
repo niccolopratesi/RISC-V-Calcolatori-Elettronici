@@ -1,8 +1,8 @@
 //
 // pci.c maps the VGA framebuffer at 0x40000000 and
-// passes that address to vga_init().
+// passes that address to vga_init(). --outdated
 //
-// vm.c maps the VGA "IO ports" at 0x3000000.
+// vm.c maps the VGA "IO ports" at 0x3000000. --outdated
 //
 // we're talking to hw/display/vga.c in the qemu source.
 //
@@ -23,15 +23,28 @@
 #include "font.h"
 #include "palette.h"
 
+/*
+standard vga ports
+#define AC 0x3c0
 #define MISC 0x3c2
 #define SEQ 0x3c4
-#define CRTC 0x3d4
 #define GC 0x3ce
-#define AC 0x3c0
+#define CRTC 0x3d4
 #define PC 0x3c8
 #define PD 0x3c9
+*/
+
 #define VGA_TEXT_HEIGHT 25
 #define VGA_TEXT_WIDTH 80
+
+#define AC 0x400
+#define MISC 0x402
+#define SEQ 0x404
+#define GC 0x40e
+#define CRTC 0x414
+#define PC 0x408
+#define PD 0x409
+
 
 
 natb readport(natl port, natb index);
@@ -53,15 +66,14 @@ void print_VGA(char *message, natb fg, natb bg);
 volatile natb __attribute__((unused)) discard; // write to this to discard
 char *vga_buf;
 
-static volatile natb *const VGA_BASE = (natb *)0x3000000L;
+static volatile natb *const VGA_BASE = (natb *)0x50000000L;
 
 static inline natw encode_char(char c, natb fg, natb bg) {
   return ((bg & 0xf) << 4 | (fg & 0xf)) << 8 | c;
 }
 
 
-static inline void memcpy(void *restrict dest, const void *restrict src,
-                          natl n) {
+static inline void memcpy(void *restrict dest, const void *restrict src,natl n){
   unsigned char *d = dest;
   const unsigned char *s = src;
 

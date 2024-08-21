@@ -3,15 +3,50 @@
 // https://wiki.osdev.org/PCI#Address_and_size_of_the_BAR
 //
 #include "tipo.h"
+#include "costanti.h"
+//#include "libce.h"
 
-void
-pci_init()
-{
-  // we'll place the VGA framebuffer at this address.
-  natq vga_framebuffer = 0x40000000L;
+
+struct PCI_config{
+  natw vendorID;
+  natw deviceID;
+  natw command;
+  natw status;
+  natb revisionID;
+  natb progIF;
+  natb subclass;
+  natb classcode;
+  natb cachelineSize;
+  natb latencyTimer;
+  natb headerType;
+  natb BIST;
+  natl bar0;
+  natl bar1;
+  natl bar2;
+  natl bar3;
+  natl bar4;
+  natl bar5;
+  natl cardbus__cis_pointer;
+  natw subsystem_vendorID;
+  natw subsystemID;
+  natl expansionROMaddress;
+  natb capabilities_pointer;
+  natb padding1;
+  natw padding2;
+  natl padding3;
+  natb interruptLine;
+  natb interruptPIN;
+  natb minGrant;
+  natb maxLatency;
+};
+
+void pci_init(){
+/*  
+  // buffer per la vga
+  //natq vga_frame_buffer = VGA_FRAMEBUFFER;
 
   // qemu -machine virt puts PCIe config space here.
-  natl  *ecam = (natl *) 0x30000000L;
+  natl  *ecam = (natl *) PCI_ECAM;
 
   // look at each device on bus 0.
   for(int dev = 0; dev < 32; dev++){
@@ -23,13 +58,17 @@ pci_init()
     natl id = base[0];
 
     if(id == 0x11111234){
+      //flog(LOG_INFO,"VGA trovata");
       // PCI device ID 1111:1234 is VGA
+      // VGA is at 00:01.0, using extended control registers (4096 bytes)
 
       // command and status register.
       // bit 0 : I/O access enable
       // bit 1 : memory access enable
       // bit 2 : enable mastering
-      base[1] = 7;
+
+      //abilitiamo accessi in memoria per il dispositivo
+      base[1] = base[1] | 0x2;
 
       for(int i = 0; i < 6; i++){
         natl old = base[4+i];
@@ -41,11 +80,19 @@ pci_init()
       }
 
       // tell the VGA to reveal its framebuffer at
-      // physical address 0x40000000.
-      base[4+0] = vga_framebuffer;
-      vga_init((char*)vga_framebuffer);
+      // physical address 0x50000000.
+      base[4+0] = VGA_FRAMEBUFFER;
+      // tell the VGA to set up I/O ports at 0x40000000
+      base[4+2] = VGA_MMIO_PORTS;
+
+      //setup video mode
+      //enable LFB and 8-bit DAC via 0xb0c3 bochs register
+      natw* bochs_pointer = (natw*) (VGA_MMIO_PORTS+0x508);
+      *bochs_pointer = 0x60;
+
+      vga_init((char*)VGA_FRAMEBUFFER);
       break;
     }
   }
-
+*/
 }

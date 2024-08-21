@@ -3,6 +3,7 @@ U=user
 I=include
 IO=io
 ODIR=objs
+B=build
 
 _OBJS = $(patsubst $(K)/%.c,%.o,$(wildcard $(K)/*.c)) $(patsubst $(K)/%.s,%.o,$(wildcard $(K)/*.s)) $(patsubst $(K)/%.cpp,%.o,$(wildcard $(K)/*.cpp))
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
@@ -74,7 +75,7 @@ ASFLAGS = 		\
 
 LDFLAGS = 		\
 	-nostdlib	\
-	-L$(I)		\
+	-L$(B)		\
 
 LDLIBS = -lce
 
@@ -83,7 +84,7 @@ RUNFLAGS += -bios none
 RUNFLAGS += -gdb tcp::1234
 RUNFLAGS += -m 128M
 RUNFLAGS += -device VGA
-RUNFLAGS += -vga cirrus
+#RUNFLAGS += -vga cirrus
 RUNFLAGS += -serial stdio
 RUNFLAGS += -smp 1
 
@@ -93,7 +94,7 @@ DEBUGFLAGS += -bios none
 DEBUGFLAGS += -gdb tcp::1234
 DEBUGFLAGS += -m 128M
 DEBUGFLAGS += -device VGA
-DEBUGFLAGS += -vga cirrus
+#DEBUGFLAGS += -vga cirrus
 DEBUGFLAGS += -serial stdio
 DEBUGFLAGS += -smp 1
 DEBUGFLAGS += -S
@@ -121,13 +122,13 @@ $(ODIR)/%.o: $U/%.cpp
 $(ODIR)/%.o: $U/%.s
 	$(AS) $(ASFLAGS) $< -o $@
 
-$(ODIR)/%.o: $(IO)/%.c
+$(ODIR)/io_c.o: $(IO)/io.c
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(ODIR)/%.o: $(IO)/%.cpp
+$(ODIR)/io_cpp.o: $(IO)/io.cpp
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
-$(ODIR)/%.o: $(IO)/%.s
+$(ODIR)/io_s.o: $(IO)/io.s
 	$(AS) $(ASFLAGS) $< -o $@
 
 $(ODIR)/%.o: libCE/%.cpp
@@ -139,39 +140,70 @@ $(ODIR)/%.o: libCE/as/%.s
 
 
 STARTUSER = 0xffff800000001000
-START_IO = ???
+#regione numero 2(partendo da 0) di livello massimo riservata 
+#ad inidirizzi virtuali per il sistema
+#inizio spazio di memoria condivisa I/O
+#lasciamo libera la prima pagina per eventuali header
+START_IO = 0x0000010000001000
 
-$(I)/libce.a: $(LIBCE_OBJECTS) $(HEADERS)
+# $(I)/libce.a: $(LIBCE_OBJECTS) $(HEADERS)
+# 	$(TOOLPREFIX)ar rcs $@ $(LIBCE_OBJECTS)
+
+# $K/kernel: $(OBJS) $(HEADERS) $(I)/libce.a $K/kernel.ld
+# 	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $K/kernel $(OBJS) $(LDLIBS)
+
+# $U/user: $(USEROBJS) $(HEADERS) $(I)/libce.a
+# 	$(LD) $(LDFLAGS) -Ttext $(STARTUSER) -o $@ $(USEROBJS) $(LDLIBS)
+
+# $U/%.strip: $U/%
+# 	$(STRIP) -s $< -o $@
+
+# $(IO)/io: $(IO_OBJS) $(HEADERS) $(I)/libce.a
+# 	$(LD) $(LDFLAGS) -Ttext $(START_IO) -o $@ $(IO_OBJS) $(LDLIBS)
+
+# $(IO)/%.strip: $(IO)/%
+# 	$(STRIP) -s $< -o $@
+
+$(B)/libce.a: $(LIBCE_OBJECTS) $(HEADERS)
 	$(TOOLPREFIX)ar rcs $@ $(LIBCE_OBJECTS)
 
-$K/kernel: $(OBJS) $(HEADERS) $(I)/libce.a $K/kernel.ld
-	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $K/kernel $(OBJS) $(LDLIBS)
+ $B/kernel: $(OBJS) $(HEADERS) $B/libce.a $K/kernel.ld
+	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $@ $(OBJS) $(LDLIBS)
 
-$U/user: $(USEROBJS) $(HEADERS) $(I)/libce.a
+ $B/user: $(USEROBJS) $(HEADERS) $B/libce.a
 	$(LD) $(LDFLAGS) -Ttext $(STARTUSER) -o $@ $(USEROBJS) $(LDLIBS)
 
-$U/%.strip: $U/%
+ $B/user.strip: $B/user
 	$(STRIP) -s $< -o $@
 
-$(IO)/io: $(IO_OBJS) $(HEADERS) $(I)/libce.a
-	$(LD) $(LDFLAGS) -Ttext $(START_IO) -o $@ $(IO_OBJS) $(LDLIBS)
+ $(B)/io: objs/io_s.o objs/io_cpp.o $(HEADERS) $B/libce.a
+	$(LD) $(LDFLAGS) -Ttext $(START_IO) -o $@ objs/io_s.o objs/io_cpp.o $(LDLIBS)
 
-$(IO)/%.strip: $(IO)/%
+ $(B)/io.strip: $B/io
 	$(STRIP) -s $< -o $@
 
 
-compile: $K/kernel $U/user.strip $(IO)/io.strip
+#compile: $K/kernel $U/user.strip $(IO)/io.strip
+compile: $B/kernel $B/user.strip $B/io.strip
 
-run: $K/kernel $U/user.strip $(IO)/io.strip
-	$(RUN) -kernel $K/kernel -initrd $U/user.strip -initrd $(IO)/io.strip
-
-debug: $K/kernel $U/user.strip $(IO)/io.strip
-	$(DEBUG) -kernel $K/kernel -initrd $U/user.strip -initrd $(IO)/io.strip
-
-libce: $(I)/libce.a
+#run: $K/kernel $U/user.strip $(IO)/io.strip
+#	$(RUN) -kernel $K/kernel -initrd $U/user.strip -initrd $(IO)/io.strip
+run: $B/kernel $B/user.strip $B/io.strip
+	$(RUN) -kernel $B/kernel -initrd $B/user.strip -initrd $B/io.strip
+#-initrd "$U/user.strip arg=foo,$(IO)/io.strip"
+#debug: $K/kernel $U/user.strip $(IO)/io.strip
+#	$(DEBUG) -kernel $K/kernel -initrd $U/user.strip -initrd $(IO)/io.strip
+debug: $B/kernel $B/user.strip $B/io.strip
+	$(DEBUG) -kernel $B/kernel -initrd $B/user.strip -initrd $B/io.strip
+	
+#libce: $(I)/libce.a
+libce: $B/libce.a
 
 #keeps make from doing something with a file named clean
 .PHONY: clean
 
+#clean:
+#	rm -f $(ODIR)/*.o $K/kernel $U/user $U/user.strip $(IO)/io $(IO)/io.strip $(I)/lib*.a
+
 clean:
-	rm -f $(ODIR)/*.o $K/kernel $U/user $U/user.strip $(IO)/io $(IO)/io.strip $(I)/lib*.a
+	rm -f $(ODIR)/*.o $B/kernel $B/user $B/user.strip $B/io $B/io.strip $B/lib*.a

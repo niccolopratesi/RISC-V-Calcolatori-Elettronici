@@ -47,6 +47,8 @@
 
 //indirizzo VGA buffer
 #define VGA_FRAMEBUFFER 0x50000000L
+//indirizzo area MMIO VGA ports
+#define VGA_MMIO_PORTS 0x40000000L
 
 // indirizzo dal quale e' montato il kernel
 #define KERNBASE 0x80000000L
@@ -58,8 +60,8 @@
     #define USER_MOD_START 0x83fff000L
 #endif
 // indirizzo in cui è caricato il descrittore del modulo io
-// caricato di default a --------
-#define IO_MOD_START 0x8
+// caricato di default a 0x84000000L
+#define IO_MOD_START 0x83fff000L
 // )
 
 // ( tipi delle primitive
@@ -127,7 +129,7 @@
 #define LIV_SISTEMA         1
 #define LIV_MACCHINA        3
 // )
-#endif
+
 
 // MACRO per gestione interruzioni
 // Machine Status Register
@@ -143,3 +145,5 @@
 #define SSTATUS_UPIE (1L << 4)   
 #define SSTATUS_SIE (1L << 1)  
 #define SSTATUS_UIE (1L << 0) 
+
+#endif

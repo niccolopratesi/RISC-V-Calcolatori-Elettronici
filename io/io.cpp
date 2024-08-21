@@ -1,4 +1,8 @@
-include "all.h"
+#include "libce.h"
+#include "costanti.h"
+#include "sys.h"
+#include "sysio.h"
+#include "io.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // @defgroup console Console
@@ -20,7 +24,7 @@ struct des_console{
     natq cont;
     /// Dimensione del buffer passato a @ref readconsole()
     natq dim;
-}
+};
 
 // Unica istanza di des_console
 des_console console;
@@ -48,9 +52,9 @@ bool kbd_init(){
  *  @return true in caso di successo, false altrimenti
  */
 
-bool vit_init(){
+bool vid_init(){
 
-
+    
 
     return true;
 }
@@ -74,6 +78,28 @@ bool console_init(){
 
     return kbd_init() && vid_init();
 }
+
+
+/*! @brief Parte C++ della primitiva readconsole()
+ *  @param buff buffer che deve ricevere i caratteri letti
+ *  @param quanti dimensione di _buff_
+ *  @return numero di caratteri effettivamente letti
+ */
+
+extern "C" natq c_readconsole(char* buff, natq quanti){
+
+}
+
+
+/*! @brief Parte C++ della primitiva readconsole()
+ *  @param buff buffer che deve ricevere i caratteri letti
+ *  @param quanti numero di caratteri da scrivere
+ */
+
+ extern "C" void c_writeconsole(const char* buff, natq quanti){
+
+ }
+
 
 /// @}
 
@@ -119,7 +145,7 @@ extern "C" void main(natq sem_io) {
 
 
     flog(LOG_INFO,"inizializzazione modulo I/O completata");
-    sem_signa(sem_io);
+    sem_signal(sem_io);
     terminate_p();
 }
 
