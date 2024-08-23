@@ -54,7 +54,7 @@ bool kbd_init(){
 
 bool vid_init(){
 
-    
+    //clear();
 
     return true;
 }
@@ -88,6 +88,8 @@ bool console_init(){
 
 extern "C" natq c_readconsole(char* buff, natq quanti){
 
+
+    return 0;
 }
 
 

@@ -64,11 +64,12 @@ void load_font(unsigned char* font_16);
 void load_palette();
 void post_font();
 void print_VGA(char *message, natb fg, natb bg);
+void clear_screen(natb fg, natb bg);
 
 volatile natb __attribute__((unused)) discard; // write to this to discard
 char *vga_buf;
 
-static volatile natb *const VGA_BASE = (natb *)0x50000000L;
+static volatile natb *const VGA_BASE = (natb *)VGA_MMIO_PORTS;
 
 static inline natw encode_char(char c, natb fg, natb bg) {
   return ((bg & 0xf) << 4 | (fg & 0xf)) << 8 | c;
@@ -84,10 +85,25 @@ static inline void memcpy(void *restrict dest, const void *restrict src,natl n){
   }
 }
 
-void vga_init(char *vga_framebuffer) {
+void vga_init() {
 
   init_textmode_80x25();
+  clear_screen(0x00,0x0F);
   print_VGA("Hello RISC-V world!\n", 0x02, 0x00);
+}
+
+void clear_screen(natb fg, natb bg){
+  volatile natb *p = (void *)(VGA_FRAMEBUFFER | (0xb8000 - 0xa0000));// 0xb8000
+
+  bg &= 0xf;
+  fg &= 0xf;
+
+  natb attribute = (bg << 4) | fg;
+
+  for(int i=0;i<80*25;i+=2){
+    p[i] = ' ';
+    p[i+1] = attribute;
+  }
 }
 
 natb readport(natl port, natb index) {
@@ -129,24 +145,40 @@ void writeport(natl port, natb index, natb val) {
 
   switch (port) {
     case AC:
+      //attribute register riceve prima l'indirizzo del registro da indicizzare 
+      //e poi il dato da trasferire
       VGA_BASE[AC] = index;
       VGA_BASE[AC] = val;
       break;
-    case 0x3c2:
-      VGA_BASE[0x3c2] = val;
+    case MISC:
+      //miscellaneous output register
+      //essendo un external register non ha bisogno di essere indicizzato
+      VGA_BASE[MISC] = val;
       break;
-    case 0x3c4:
-    case 0x3ce:
-    case 0x3d4:
+    case SEQ:
+      //sequencer register riceve prima l'indice nell'address register
+      //poi scrive il dato nel data register (1 byte successivo)
       VGA_BASE[port] = index;
       VGA_BASE[port + 1] = val;
       break;
-    case 0x3d5:
-      VGA_BASE[0x3d6] = val;
+    case GC:
+      //graphics register riceve prima l'indice nell'address register
+      //poi scrive il dato nel data register (1 byte successivo)
+      VGA_BASE[port] = index;
+      VGA_BASE[port + 1] = val;
       break;
-    case 0x3d6:
-    case 0x3c7:
-    case 0x3c8:
+    case CRTC:
+      //controller register riceve prima l'indice nell'address register
+      //poi scrive il dato nel data register (1 byte successivo)
+      VGA_BASE[port] = index;
+      VGA_BASE[port + 1] = val;
+      break;
+    case PC:
+      //dac register
+      //poiché prima bisogna scrivere l'indice di partenza e poi terne di colori RGB
+      //nel data register, si evita di fare tutto nella stessa write
+      VGA_BASE[port] = index;
+      break;
     case PD:
       VGA_BASE[port] = val;
       break;
@@ -189,19 +221,28 @@ void init_SEQ(){
 }
 
 void init_GC(){
+  //set/reset register
   writeport(GC, 0x00, 0x00);
+  //enable set/reset register
   writeport(GC, 0x01, 0x00);
+  //color compare register
   writeport(GC, 0x02, 0x00);
+  //data rotate register: input unmodified
   writeport(GC, 0x03, 0x00);
+  //read map select register
   writeport(GC, 0x04, 0x00);
+  //graphics mode register
   writeport(GC, 0x05, 0x10);
+  //miscellaneous graphics register: B8000-BFFFF (32K region)
   writeport(GC, 0x06, 0x0E);
+  //color don't care register
   writeport(GC, 0x07, 0x0F);
   //writeport(GC, 0x07, 0x00);     ignorare o no i plane per comparare col colore?
   writeport(GC, 0x08, 0xFF);
 }
 
 void init_CRTC(){
+  //unlock sui registri 0x00-0x07
   writeport(CRTC, 0x11, 0x00);
   //writeport(CRTC, 0x11, 0x0E);  dovrebbero funzionare entrambi
 
@@ -216,23 +257,33 @@ void init_CRTC(){
 
   writeport(CRTC, 0x08, 0x00);
   writeport(CRTC, 0x09, 0x4f);
+  //cursor start register: cursor enabled
   writeport(CRTC, 0x0a, 0x0D);
-  // writeport(CRTC, 0x0a, 0x10);
+  // writeport(CRTC, 0x0a, 0x10);  cursor scan line start?
+
+  //cursor end register
   writeport(CRTC, 0x0b, 0x0E);
+
+  //start address register: impostiamo indirizzo di partenza a A000:0000
   writeport(CRTC, 0x0c, 0x00);
   writeport(CRTC, 0x0d, 0x00);
+  //cursor location register: impostiamo la partenza a 0
   writeport(CRTC, 0x0e, 0x00);
   writeport(CRTC, 0x0f, 0x00);
   //writeport(CRTC, 0x0f, 0x50);
 
   writeport(CRTC, 0x10, 0x9C);
+  //lock sui registri 0x00-0x07
   writeport(CRTC, 0x11, 0x8E);
+
   writeport(CRTC, 0x12, 0x8F);
   writeport(CRTC, 0x13, 0x28);
   writeport(CRTC, 0x14, 0x1F);
   writeport(CRTC, 0x15, 0x96);
   writeport(CRTC, 0x16, 0xB9);
+  //mode control register
   writeport(CRTC, 0x17, 0xA3);
+  //line compare register
   writeport(CRTC, 0x18, 0xFF);
 }
 
@@ -440,6 +491,9 @@ void load_font(unsigned char* font_16){
   writeport(MISC, 0x00, 0x67);
   //set bit PAS -> load color values into internal palette registers
   VGA_BASE[AC] = 0x20;  
+  //reset index mode?
+  //discard = VGA_BASE[INPUT_STATUS_REGISTER];
+
   //modalità di accesso sequenziale
   writeport(SEQ, 0x04, 0x06);
   //display disable
@@ -451,7 +505,7 @@ void load_font(unsigned char* font_16){
   //selezioniamo plane 2
   writeport(SEQ, 0x02, 0x04);
 
-  volatile void *vga_buf = (void *)(0x50000000); // 0xa0000
+  volatile void *vga_buf = (void *)VGA_FRAMEBUFFER; // 0xa0000
   for (natl i = 0; i < 256; ++i) {
     memcpy((void *)(vga_buf + 32 * i), (void*)(font_16+16 * i), 16);
   }
@@ -459,82 +513,82 @@ void load_font(unsigned char* font_16){
 
 void post_font(){
   writeport(SEQ, 0x04, 0x02);
-  writeport(AC, 0x00, 0x00);
-  writeport(AC, 0x01, 0x01);
-  writeport(AC, 0x02, 0x02);
-  writeport(AC, 0x03, 0x03);
-  writeport(AC, 0x04, 0x04);
-  writeport(AC, 0x05, 0x05);
-  writeport(AC, 0x06, 0x14);
-  writeport(AC, 0x07, 0x07);
-  writeport(AC, 0x08, 0x38);
-  writeport(AC, 0x09, 0x39);
-  writeport(AC, 0x0a, 0x3a);
-  writeport(AC, 0x0b, 0x3b);
-  writeport(AC, 0x0c, 0x3c);
-  writeport(AC, 0x0d, 0x3d);
-  writeport(AC, 0x0e, 0x3e);
-  writeport(AC, 0x0f, 0x3f);
+  // writeport(AC, 0x00, 0x00);
+  // writeport(AC, 0x01, 0x01);
+  // writeport(AC, 0x02, 0x02);
+  // writeport(AC, 0x03, 0x03);
+  // writeport(AC, 0x04, 0x04);
+  // writeport(AC, 0x05, 0x05);
+  // writeport(AC, 0x06, 0x14);
+  // writeport(AC, 0x07, 0x07);
+  // writeport(AC, 0x08, 0x38);
+  // writeport(AC, 0x09, 0x39);
+  // writeport(AC, 0x0a, 0x3a);
+  // writeport(AC, 0x0b, 0x3b);
+  // writeport(AC, 0x0c, 0x3c);
+  // writeport(AC, 0x0d, 0x3d);
+  // writeport(AC, 0x0e, 0x3e);
+  // writeport(AC, 0x0f, 0x3f);
 
-  writeport(AC, 0x10, 0x0c);
-  writeport(AC, 0x11, 0x00);
-  writeport(AC, 0x12, 0x0f);
-  writeport(AC, 0x13, 0x08);
-  writeport(AC, 0x14, 0x00);
+  // writeport(AC, 0x10, 0x0c);
+  // writeport(AC, 0x11, 0x00);
+  // writeport(AC, 0x12, 0x0f);
+  // writeport(AC, 0x13, 0x08);
+  // writeport(AC, 0x14, 0x00);
 
-  writeport(SEQ, 0x00, 0x03);
+  //writeport(SEQ, 0x00, 0x03);
   writeport(SEQ, 0x01, 0x00);
   writeport(SEQ, 0x02, 0x03);
-  writeport(SEQ, 0x03, 0x00);
-  writeport(SEQ, 0x04, 0x02);
+  //writeport(SEQ, 0x03, 0x00);
+  //writeport(SEQ, 0x04, 0x02);
 
-  writeport(GC, 0x00, 0x00);
-  writeport(GC, 0x01, 0x00);
-  writeport(GC, 0x02, 0x00);
-  writeport(GC, 0x03, 0x00);
-  writeport(GC, 0x04, 0x00);
+  // writeport(GC, 0x00, 0x00);
+  // writeport(GC, 0x01, 0x00);
+  // writeport(GC, 0x02, 0x00);
+  // writeport(GC, 0x03, 0x00);
+  // writeport(GC, 0x04, 0x00);
   writeport(GC, 0x05, 0x10);
   writeport(GC, 0x06, 0x0e);
-  writeport(GC, 0x07, 0x0f);
-  writeport(GC, 0x08, 0xff);
+  // writeport(GC, 0x07, 0x0f);
+  // writeport(GC, 0x08, 0xff);
 
-  writeport(CRTC, 0x11, 0x00);
+  // writeport(CRTC, 0x11, 0x00);
 
-  writeport(CRTC, 0x00, 0x5f);
-  writeport(CRTC, 0x01, 0x4f);
-  writeport(CRTC, 0x02, 0x50);
-  writeport(CRTC, 0x03, 0x82);
-  writeport(CRTC, 0x04, 0x55);
-  writeport(CRTC, 0x05, 0x81);
-  writeport(CRTC, 0x06, 0xbf);
-  writeport(CRTC, 0x07, 0x1f);
-  writeport(CRTC, 0x08, 0x00);
-  writeport(CRTC, 0x09, 0x4f);
-  writeport(CRTC, 0x0a, 0x0d);
-  // writeport(CRTC, 0x0a, 0x10);//disable cursor
-  writeport(CRTC, 0x0b, 0x0e);
-  writeport(CRTC, 0x0c, 0x00);
-  writeport(CRTC, 0x0d, 0x00);
-  writeport(CRTC, 0x0e, 0x00);
-  writeport(CRTC, 0x0f, 0x00);
-  writeport(CRTC, 0x10, 0x9c);
-  writeport(CRTC, 0x11, 0x8e);
-  writeport(CRTC, 0x12, 0x8f);
-  writeport(CRTC, 0x13, 0x28);
-  writeport(CRTC, 0x14, 0x1f);
-  writeport(CRTC, 0x15, 0x96);
-  writeport(CRTC, 0x16, 0xb9);
-  writeport(CRTC, 0x17, 0xa3);
-  writeport(CRTC, 0x18, 0xff);
+  // writeport(CRTC, 0x00, 0x5f);
+  // writeport(CRTC, 0x01, 0x4f);
+  // writeport(CRTC, 0x02, 0x50);
+  // writeport(CRTC, 0x03, 0x82);
+  // writeport(CRTC, 0x04, 0x55);
+  // writeport(CRTC, 0x05, 0x81);
+  // writeport(CRTC, 0x06, 0xbf);
+  // writeport(CRTC, 0x07, 0x1f);
+  // writeport(CRTC, 0x08, 0x00);
+  // writeport(CRTC, 0x09, 0x4f);
+  // writeport(CRTC, 0x0a, 0x0d);
+  // // writeport(CRTC, 0x0a, 0x10);//disable cursor
+  // writeport(CRTC, 0x0b, 0x0e);
+  // writeport(CRTC, 0x0c, 0x00);
+  // writeport(CRTC, 0x0d, 0x00);
+  // writeport(CRTC, 0x0e, 0x00);
+  // writeport(CRTC, 0x0f, 0x00);
+  // writeport(CRTC, 0x10, 0x9c);
+  // writeport(CRTC, 0x11, 0x8e);
+  // writeport(CRTC, 0x12, 0x8f);
+  // writeport(CRTC, 0x13, 0x28);
+  // writeport(CRTC, 0x14, 0x1f);
+  // writeport(CRTC, 0x15, 0x96);
+  // writeport(CRTC, 0x16, 0xb9);
+  // writeport(CRTC, 0x17, 0xa3);
+  // writeport(CRTC, 0x18, 0xff);
 
   writeport(MISC, 0x00, 0x67);
-  VGA_BASE[AC] = 0x20;
+  //VGA_BASE[AC] = 0x20;
 }
 
 
 void print_VGA(char *message, natb fg, natb bg)
 {
-  volatile natb *p = (void *)(0x50000000 | (0xb8000 - 0xa0000));// 0xb8000
+  volatile natb *p = (void *)(VGA_FRAMEBUFFER | (0xb8000 - 0xa0000));// 0xb8000
   // take current cursor position
   int cursor = readport(CRTC, 0x0f);
   cursor = (cursor+1)*2 -2; // where to write
@@ -557,11 +611,11 @@ void print_VGA(char *message, natb fg, natb bg)
 }
 
 void init_textmode_80x25(){
-  writeport(SEQ, 0x00, 0x01);
-  //writeport(SEQ, 0x00, 0x02);    --check documentation
+  //writeport(SEQ, 0x00, 0x01);
+  writeport(SEQ, 0x00, 0x02);    //--check documentation
 
-  writeport(MISC, 0x00, 0xc3);
-  //writeport(MISC, 0x00, 0x67);   --check documentation
+  //writeport(MISC, 0x00, 0xc3);
+  writeport(MISC, 0x00, 0x67);   //--check documentation
 
   init_SEQ();
   init_CRTC();

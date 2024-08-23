@@ -90,7 +90,7 @@ void pci_init(){
       natw* bochs_pointer = (natw*) (VGA_MMIO_PORTS+0x508);
       *bochs_pointer = 0x60;
 
-      vga_init((char*)VGA_FRAMEBUFFER);
+      vga_init();
       break;
     }
   }
