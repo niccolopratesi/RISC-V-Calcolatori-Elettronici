@@ -14,44 +14,47 @@
 // massimo numero di processi
 #define MAX_PROC 		1024UL
 // priorità minima dei processi esterni
-#define MIN_EXT_PRIO		1024UL
+#define MIN_EXT_PRIO	1024UL
 // dimensione della memoria fisica
 #define MEM_TOT			(128*MiB)
 // dimensione dello heap utente
-#define DIM_USR_HEAP		(1*MiB)
+#define DIM_USR_HEAP	(1*MiB)
 // dimensione degli stack utente
-#define DIM_USR_STACK		(64*KiB)
+#define DIM_USR_STACK	(64*KiB)
 // dimensione dello heap del modulo I/O
 #define DIM_IO_HEAP		(1*MiB)
 // dimensione degli stack sistema
-#define DIM_SYS_STACK		(4*KiB)
+#define DIM_SYS_STACK	(4*KiB)
 // numero massimo di prd usati da dmaread/dmawrite
 #define MAX_PRD			16
-
+// numero massimo interruzione
+#define MAX_IRQ         32
 
 
 //indirizzo inizio PLIC
-#define PLIC 0x0c000000L
+#define PLIC            0x0c000000L
 //dimensione spazio riservato al PLIC
-#define PLIC_SIZE 0x400000L
+#define PLIC_SIZE       0x400000L
 //indirizzo inizio VIRTIO0
-#define VIRTIO0 0x10001000L
+#define VIRTIO0         0x10001000L
 //indirizzo inizio PCIe-ECAM
-#define PCI_ECAM 0x30000000L
+#define PCI_ECAM        0x30000000L
 //dimensione spazio PCIe-ECAM
-#define PCI_ECAM_SIZE 0x10000000L
+#define PCI_ECAM_SIZE   0x10000000L
 //indirizzo inizio PCIe-MMIO
-#define PCI_MMIO 0x40000000L
+#define PCI_MMIO        0x40000000L
 //dimensione spazio PCIe-MMIO
-#define PCI_MMIO_SIZE 0x40000000L
+#define PCI_MMIO_SIZE   0x40000000L
 
 //indirizzo VGA buffer
 #define VGA_FRAMEBUFFER 0x50000000L
 //indirizzo area MMIO VGA ports
-#define VGA_MMIO_PORTS 0x40000000L
+#define VGA_MMIO_PORTS  0x40000000L
+
+
 
 // indirizzo dal quale e' montato il kernel
-#define KERNBASE 0x80000000L
+#define KERNBASE           0x80000000L
 // indirizzo in cui è caricato il descrittore del modulo utente
 // caricato di default a metà della memoria fisica
 #ifdef UBUNTU
@@ -61,8 +64,9 @@
 #endif
 // indirizzo in cui è caricato il descrittore del modulo io
 // caricato di default a 0x84000000L
-#define IO_MOD_START 0x83fff000L
+#define IO_MOD_START       0x83fff000L
 // )
+
 
 // ( tipi delle primitive
 //   ( comuni
@@ -87,11 +91,11 @@
 //   ( fornite dal modulo I/O
 #define IO_TIPO_HDR		0x40	// readhd_n
 #define IO_TIPO_HDW		0x41	// writehd_n
-#define IO_TIPO_DMAHDR		0x42	// dmareadhd_n
-#define IO_TIPO_DMAHDW		0x43	// dmawritehd_n
-#define IO_TIPO_RCON		0x44	// readconsole
-#define IO_TIPO_WCON		0x45	// writeconsole
-#define IO_TIPO_INIC		0x46	// iniconsole
+#define IO_TIPO_DMAHDR	0x42	// dmareadhd_n
+#define IO_TIPO_DMAHDW	0x43	// dmawritehd_n
+#define IO_TIPO_RCON	0x44	// readconsole
+#define IO_TIPO_WCON	0x45	// writeconsole
+#define IO_TIPO_INIC	0x46	// iniconsole
 #define IO_TIPO_GMI		0x47	// getiomeminfo
 //   )
 // )
@@ -107,21 +111,21 @@
 #define I_SIS_C		0
 #define I_SIS_P		1
 #define I_MIO_C		2
-#define I_UTN_C       256
-#define I_UTN_P	      384
+#define I_UTN_C     256
+#define I_UTN_P	    384
 
 #define N_SIS_C		1
 #define N_SIS_P		1
 #define N_MIO_C		1
-#define N_UTN_C	      128
-#define N_UTN_P	      128
+#define N_UTN_C	    128
+#define N_UTN_P	    128
 
 // )
 
 
 // ( costanti non modificabili
-#define MIN_PROC_ID		0
-#define MAX_PROC_ID		(MAX_PROC - 1)
+#define MIN_PROC_ID		    0
+#define MAX_PROC_ID		    (MAX_PROC - 1)
 #define MAX_PRIORITY		(MIN_EXT_PRIO - 1)
 #define MIN_PRIORITY		0x1
 #define MAX_EXT_PRIO		(MIN_EXT_PRIO + 0xFE)
@@ -134,16 +138,16 @@
 // MACRO per gestione interruzioni
 // Machine Status Register
 #define MSTATUS_MPP_MASK (3L << 11) 
-#define MSTATUS_MPP_M (3L << 11)
-#define MSTATUS_MPP_S (1L << 11)
-#define MSTATUS_MPP_U (0L << 11)
-#define MSTATUS_MIE (1L << 3)   
+#define MSTATUS_MPP_M    (3L << 11)
+#define MSTATUS_MPP_S    (1L << 11)
+#define MSTATUS_MPP_U    (0L << 11)
+#define MSTATUS_MIE      (1L << 3)   
 
 // Supervisor Status Register
-#define SSTATUS_SPP (1L << 8)   
-#define SSTATUS_SPIE (1L << 5)   
-#define SSTATUS_UPIE (1L << 4)   
-#define SSTATUS_SIE (1L << 1)  
-#define SSTATUS_UIE (1L << 0) 
+#define SSTATUS_SPP      (1L << 8)   
+#define SSTATUS_SPIE     (1L << 5)   
+#define SSTATUS_UPIE     (1L << 4)   
+#define SSTATUS_SIE      (1L << 1)  
+#define SSTATUS_UIE      (1L << 0) 
 
 #endif

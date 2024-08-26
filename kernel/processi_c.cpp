@@ -25,6 +25,9 @@ des_proc* esecuzione;
 /// Coda pronti (vuota solo quando dummy è in @ref esecuzione)
 des_proc* pronti;
 
+/// Associazione IRQ -> processo esterno che lo gestisce 
+des_proc* a_p[MAX_IRQ];
+
 /*! @brief Inserimento in lista ordinato (per priorità)
  *  @param p_lista	lista in cui inserire
  *  @param p_elem	elemento da inserire
@@ -564,4 +567,68 @@ extern "C" void c_do_log(log_sev sev, const char* buf, natl quanti)
 		return;
 	}
 	do_log(sev, buf, quanti);
+}
+
+
+extern "C" void c_activate_pe(void f(natq), natq a, natl prio, natl liv, natb irq)
+{
+	des_proc* p;					// des_proc per il nuovo processo
+	natl 	  id = 0xFFFFFFFF;		// id da restituire in caso di fallimento
+	natw      tipo;
+
+	esecuzione->contesto[I_A0] = id;
+
+	if (prio < MIN_EXT_PRIO || prio > MAX_EXT_PRIO) {
+		flog(LOG_WARN, "Priorita' non valida: %d", prio);
+		c_abort_p();
+		return;
+	}
+
+	// controlliamo che 'liv' contenga un valore ammesso
+	if (liv != LIV_UTENTE && liv != LIV_SISTEMA) {
+		flog(LOG_WARN, "livello non valido: %d", liv);
+		c_abort_p();
+		return;
+	}
+
+	// non possiamo creare un processo di livello sistema mentre
+	// siamo a livello utente
+	if (liv == LIV_SISTEMA && esecuzione->livello == LIV_UTENTE) {
+		flog(LOG_WARN, "errore di protezione");
+		c_abort_p();
+		return;
+	}
+	
+	if(irq >= MAX_IRQ){
+		flog(LOG_WARN,"irq %hhu non valido (max %u)",irq,MAX_IRQ);
+		return;
+	}
+
+	if(a_p[irq]){
+		flog(LOG_WARN,"irq %hhu occupato",irq);
+		return;
+	}
+
+	// tipo = prio - MIN_EXT_PRIO;
+	// if(gate_present(tipo)){
+	// 	flog(LOG_WARN,"irq %hx occupato",tipo);
+	// 	return;
+	// }
+
+	
+
+	// accorpiamo le parti comuni tra c_activate_p e c_activate_pe
+	// nella funzione ausiliare crea_processo
+	p = crea_processo(f, a, prio, liv);
+
+	if (p == 0) {
+		return;
+	}
+
+	a_p[irq] = p;
+
+	flog(LOG_INFO,"estern=%u entry=%p(%lu) prio=%u (tipo=%2x) liv=%u irq=%hhu",p->id,f,a,prio,tipo,liv,irq);
+
+	esecuzione->contesto[I_A0] = p->id;
+	return;
 }

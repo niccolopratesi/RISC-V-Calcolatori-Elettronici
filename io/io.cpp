@@ -54,7 +54,7 @@ bool kbd_init(){
 
 bool vid_init(){
 
-    //clear();
+    //clear_screen(0x00,0x0F);
 
     return true;
 }
@@ -99,7 +99,26 @@ extern "C" natq c_readconsole(char* buff, natq quanti){
  */
 
  extern "C" void c_writeconsole(const char* buff, natq quanti){
+    des_console *p_des = &console;
 
+    if(!access(buff,quanti,false,false)){
+        flog(LOG_WARN,"writeconsole: parametri non validi: %p, %lu:",buff,quanti);
+        abort_p();
+    }
+
+    sem_wait(p_des->mutex);
+    #ifndef AUTOCORR
+        for(natq i = 0;i < quanti;i++){
+            //vid::char_write(buff[i]);  print vga fa la stessa cosa
+        }
+    #else /*AUTOCORR*/
+        if(quanti > 0 && buff[[quanti-1]] == '\n')
+            quanti--;
+        if(quanti > 0)
+            flog(LOG_USR, "%.*s",static_cast<int>(quanti),buff);
+    #endif /*AUTOCORR*/
+
+    sem_signal(p_des->mutex);
  }
 
 

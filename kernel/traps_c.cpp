@@ -7,6 +7,7 @@
 #include "semafori.h"
 #include "timer.h"
 #include "sys.h"
+#include "vm.h"
 
 void timer_debug(){
   flog(LOG_INFO, "Timer fired");
@@ -23,8 +24,12 @@ int dev_int() {
         // PLIC
         int irq = plic_claim();
 
-        if (irq == UART0_IRQ) 
-            uart_intr();
+        //handler interruzione esterna
+        if(a_p[irq]){
+            inspronti();
+            inserimento_lista(pronti,a_p[irq]);
+            schedulatore();
+        }
         else 
             flog(LOG_WARN, "Unexpected interrupt: %d", irq);
 
@@ -85,6 +90,22 @@ void syscall(void)
         break;
     case TIPO_L:
         c_do_log((log_sev)p->contesto[I_A0], (const char*)p->contesto[I_A1], p->contesto[I_A2]);
+        break;
+    case TIPO_WFI:
+        plic_complete(p->contesto[I_A0]);
+        schedulatore();
+        break;
+    case TIPO_TRA :
+        c_trasforma(p->contesto[I_A0]);
+        break;
+    case TIPO_ACC :
+        c_access(p->contesto[I_A0], p->contesto[I_A1], p->contesto[I_A2], p->contesto[I_A3]);
+        break;
+     case TIPO_APE :
+        c_activate_pe((void(*)(natq))p->contesto[I_A0], p->contesto[I_A1], p->contesto[I_A2], p->contesto[I_A3],p->contesto[I_A4]);
+        break;
+    case TIPO_AB :
+        c_abort_p(p->contesto[I_A0]);
         break;
     // case TIPO_GMI:
     //     c_getmeminfo();

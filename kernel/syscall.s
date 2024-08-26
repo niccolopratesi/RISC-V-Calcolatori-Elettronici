@@ -12,6 +12,14 @@
 .equ TIPO_L,			0x06	# do_log
 .equ TIPO_GMI,  		0x07	# getmeminfo (debug)
 
+.equ TIPO_APE,			0x30	# activate_pe
+.equ TIPO_WFI,			0x31	# wfi
+.equ TIPO_FG,			0x32	# fill_gate
+.equ TIPO_AB,			0x33	# abort_p
+.equ TIPO_IOP,			0x34	# io_panic
+.equ TIPO_TRA,			0x35	# trasforma
+.equ TIPO_ACC,			0x36	# access
+
 	.global sem_ini
 sem_ini:
 	.cfi_startproc

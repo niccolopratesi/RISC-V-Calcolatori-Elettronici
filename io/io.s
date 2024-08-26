@@ -30,7 +30,7 @@ start:
 
 .equ TIPO_APE,		    0x30    #activate_pe
 .equ TIPO_WFI,	    	0x31	#wfi
-.equ TIPO_FG,			0x32	#fill_gate
+#.equ TIPO_FG,			0x32	#fill_gate
 .equ TIPO_AB,			0x33	#abort_p
 .equ TIPO_IOP,		    0x34	#io_panic
 .equ TIPO_TRA,		    0x35	#trasforma
@@ -143,14 +143,6 @@ abort_p:
 io_panic:
     .cfi_startproc
     li a7, TIPO_IOP
-    ecall
-    ret
-    .cfi_endproc
-
-    .global fill_gate
-fill_gate:
-    .cfi_startproc
-    li a7, TIPO_FG
     ecall
     ret
     .cfi_endproc

@@ -20,6 +20,6 @@ extern "C" void enableSInterrupts();
 extern "C" void sInterruptReturn();
 extern "C" void clearSPreviousPrivilege();
 extern "C" void clearSSIP();
-extern "C" int readSSIP();
+extern "C" int  readSSIP();
 extern "C" void setSPreviousInterruptEnable();
 extern "C" void schedule_next_timer_interrupt();

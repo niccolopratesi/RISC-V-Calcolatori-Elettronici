@@ -126,17 +126,17 @@ void rilascia_frame(paddr f){
 // tabelle)
 void inc_ref(paddr f)
 {
-	vdf[f / DIM_PAGINA].nvalide++;
+	vdf[(f-0x80000000L) / DIM_PAGINA].nvalide++;
 }
 
 void dec_ref(paddr f)
 {
-	vdf[f / DIM_PAGINA].nvalide--;
+	vdf[(f-0x80000000L) / DIM_PAGINA].nvalide--;
 }
 
 natl get_ref(paddr f)
 {
-	return vdf[f / DIM_PAGINA].nvalide;
+	return vdf[(f-0x80000000L) / DIM_PAGINA].nvalide;
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -149,7 +149,7 @@ paddr alloca_tab()
 	paddr f = alloca_frame();
 	if (f) {
 		memset(voidptr_cast(f), 0, DIM_PAGINA);
-		vdf[f / DIM_PAGINA].nvalide = 0;
+		vdf[(f-0x80000000L)/ DIM_PAGINA].nvalide = 0;
 	}
 	return f;
 }

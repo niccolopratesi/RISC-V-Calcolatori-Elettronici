@@ -96,6 +96,7 @@ bool apic_init();
 void apic_reset();
 extern "C" void reboot();
 void fpanic(const char *fmt, ...) __attribute__((noreturn));
+extern "C" void vga_init();
 
 typedef unsigned long uintptr_t;
 

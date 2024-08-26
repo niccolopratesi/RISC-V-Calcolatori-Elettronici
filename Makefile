@@ -191,6 +191,7 @@ compile: $B/kernel $B/user.strip $B/io.strip
 run: $B/kernel $B/user.strip $B/io.strip
 	$(RUN) -kernel $B/kernel -initrd $B/user.strip -initrd $B/io.strip
 #-initrd "$U/user.strip arg=foo,$(IO)/io.strip"
+
 #debug: $K/kernel $U/user.strip $(IO)/io.strip
 #	$(DEBUG) -kernel $K/kernel -initrd $U/user.strip -initrd $(IO)/io.strip
 debug: $B/kernel $B/user.strip $B/io.strip

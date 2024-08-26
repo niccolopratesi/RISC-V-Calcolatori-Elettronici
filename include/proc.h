@@ -45,6 +45,7 @@ extern des_proc *esecuzione;
 extern des_proc *esecuzione_precedente;
 extern natl processi;
 extern des_proc *pronti;
+extern des_proc* a_p[];
 
 natl crea_dummy();
 des_proc* crea_processo(void f(natq), natq a, int prio, char liv);
@@ -52,6 +53,7 @@ extern "C" void c_activate_p(void f(natq), natq a, natl prio, natl liv);
 extern "C" void c_terminate_p(bool logms = true);
 extern "C" void c_abort_p(bool selfdump = true);
 extern "C" void c_do_log(log_sev sev, const char* buf, natl quanti);
+extern "C" void c_activate_pe(void f(natq), natq a, natl prio, natl liv,natb irq);
 des_proc *des_p(natw id);
 void inserimento_lista(des_proc*& p_lista, des_proc* p_elem);
 des_proc* rimozione_lista(des_proc*& p_lista);
