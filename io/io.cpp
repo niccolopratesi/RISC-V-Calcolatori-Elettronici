@@ -93,8 +93,8 @@ extern "C" natq c_readconsole(char* buff, natq quanti){
 }
 
 
-/*! @brief Parte C++ della primitiva readconsole()
- *  @param buff buffer che deve ricevere i caratteri letti
+/*! @brief Parte C++ della primitiva writeconsole()
+ *  @param buff buffer da cui leggere i caratteri
  *  @param quanti numero di caratteri da scrivere
  */
 

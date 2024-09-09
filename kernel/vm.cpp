@@ -62,7 +62,7 @@ extern "C" natq end;
 void init_frame()
 {
 	// primo frame di M2
-	paddr fine_M1 = allinea(reinterpret_cast<paddr>(&end), DIM_PAGINA);
+	paddr fine_M1 = start_M2;
 	// numero di frame in M1 e indice di f in vdf
 	N_M1 = (fine_M1-0x80000000) / DIM_PAGINA;
 	// numero di frame in M2
@@ -288,7 +288,7 @@ bool crea_finestra_FM(paddr root_tab)
 	}
 
 	//Mappa PCIe-ECAM
-	if(map(root_tab, PCI_ECAM, PCI_ECAM+PCI_ECAM_SIZE, BIT_X | BIT_W | BIT_R | BIT_G, identity_map) != (PCI_ECAM+PCI_ECAM_SIZE)){
+	if(map(root_tab, PCI_ECAM, PCI_ECAM+PCI_ECAM_SIZE, BIT_X | BIT_W | BIT_R | BIT_G, identity_map,2) != (PCI_ECAM+PCI_ECAM_SIZE)){
 		return false;
 	}
 

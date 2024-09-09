@@ -62,9 +62,9 @@
 #else
     #define USER_MOD_START 0x83fff000L
 #endif
-// indirizzo in cui è caricato il descrittore del modulo io
-// caricato di default a 0x84000000L
-#define IO_MOD_START       0x83fff000L
+// indirizzo da cui sono caricati i descrittori del modulo io e utente
+// caricato di default a 0x84000000L o 0x83fff000L(ubuntu)
+#define MOD_START       0x83fff000L
 // )
 
 

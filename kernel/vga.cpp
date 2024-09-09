@@ -109,23 +109,24 @@ extern "C" void vga_init() {
 
   init_textmode_80x25();
 
-  //scritture a 0xa0000 colorano il quadratino del carattere
+  //scritture a 0xa0000 colorano la cella del carattere
   volatile natb *p = (natb *)(VGA_FRAMEBUFFER);
+
   p[0] = 0x00;
   p[1] = 0x0f;
-  for(int i=2;i<300*200;i+=2){
-    p[i] = 0x00;
-    p[i+1] = 0x0f;
+  for(int i=2;i<300;i+=2){
+    p[i] = 0x30;
+    p[i+1] = 0x0f;  //background rosso
   }
 
-  //scritture a 0xb8000 vengono ignorate, perché?
-  p = (natb *)(VGA_FRAMEBUFFER+0x18000);
-  p[0] = 0x00;
-  p[1] = 0x0f;
-  for(int i=2;i<300*200;i+=2){
-    p[i] = 0x10;
-    p[i+1] = 0x0f;
-  }
+  // //scritture a 0xb8000 vengono ignorate, perché?
+  // p = (natb *)(VGA_FRAMEBUFFER+0x18000);
+  // p[0] = 0x00;
+  // p[1] = 0x0f;
+  // for(int i=2;i<300*200;i+=2){
+  //   p[i] = 0x10;
+  //   p[i+1] = 0x0f;
+  // }
 
   //0x0F = bright white on black background
   //clear_screen(0x00,0x0F);
@@ -133,20 +134,32 @@ extern "C" void vga_init() {
   //print_VGA("Hello RISC-V world!\n", 0x02, 0x00);
 
 
-/*
-  //modalità grafica
-  init_graphicmode_320x200();
 
-  //test graphic mode
-  //metà schermo rosso e metà schermo verde
-  volatile natb *p = (natb *)VGA_FRAMEBUFFER;
-  for(int i=0; i < 320*100;i++){
-    p[i] = 0xfe;
-  }
-  for(int i=320*100; i < 320*200;i++){
-    p[i] = 0xfd;
-  }
-*/
+  // //modalità grafica
+  // init_graphicmode_320x200();
+
+  // //test graphic mode
+  // //metà schermo rosso e metà schermo verde
+  // //sia verticalmente che orizzontalmente
+
+  // for(int i=0; i < 320*100;i++){
+  //   p[i] = 0xfe;
+  // }
+  // for(int i=320*100; i < 320*200;i++){
+  //   p[i] = 0xfd;
+  // }
+
+
+  // for(int i=0; i < 200;i++){
+  //   for(int j=0; j < 320;j++){
+  //     if(j<1){
+
+  //       p[i*320 + j] = 0xfd;
+  //     }else{
+  //       p[i*320 + j] = 0xfe;
+  //     }
+  //   }
+  // }
 
   flog(LOG_INFO,"VGA inizializzata");
 }
@@ -583,13 +596,12 @@ void load_font(unsigned char* font_16){
   // seleziona plane 2 per trasferire dati in read mode e 
   // seleziona regione 0xb8000 per la decodifica della vga 
   // il font dove va caricato? in quale regione? 0xa0000 o 0xb8000
-  //writeport(GC, 0x06, 0x0c);
-  //writeport(GC, 0x04, 0x02);
+  // writeport(GC, 0x06, 0x08);
+  // writeport(GC, 0x04, 0x08);
 
 
   //selezioniamo plane 2
   writeport(SEQ, 0x02, 0x04);
-
 
   //andrebbe prima prelevato da dove parte il segmento e scrivere a quell'offset
   //leggendo GC 0x06   data>>=2 data&=3    1:A0000  2:B0000   3:B8000

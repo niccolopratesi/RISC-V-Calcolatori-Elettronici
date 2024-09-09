@@ -84,7 +84,6 @@ RUNFLAGS += -bios none
 RUNFLAGS += -gdb tcp::1234
 RUNFLAGS += -m 128M
 RUNFLAGS += -device VGA
-#RUNFLAGS += -vga cirrus
 RUNFLAGS += -serial stdio
 RUNFLAGS += -smp 1
 
@@ -94,7 +93,6 @@ DEBUGFLAGS += -bios none
 DEBUGFLAGS += -gdb tcp::1234
 DEBUGFLAGS += -m 128M
 DEBUGFLAGS += -device VGA
-#DEBUGFLAGS += -vga cirrus
 DEBUGFLAGS += -serial stdio
 DEBUGFLAGS += -smp 1
 DEBUGFLAGS += -S
@@ -146,24 +144,6 @@ STARTUSER = 0xffff800000001000
 #lasciamo libera la prima pagina per eventuali header
 START_IO = 0x0000010000001000
 
-# $(I)/libce.a: $(LIBCE_OBJECTS) $(HEADERS)
-# 	$(TOOLPREFIX)ar rcs $@ $(LIBCE_OBJECTS)
-
-# $K/kernel: $(OBJS) $(HEADERS) $(I)/libce.a $K/kernel.ld
-# 	$(LD) $(LDFLAGS) -T $K/kernel.ld -o $K/kernel $(OBJS) $(LDLIBS)
-
-# $U/user: $(USEROBJS) $(HEADERS) $(I)/libce.a
-# 	$(LD) $(LDFLAGS) -Ttext $(STARTUSER) -o $@ $(USEROBJS) $(LDLIBS)
-
-# $U/%.strip: $U/%
-# 	$(STRIP) -s $< -o $@
-
-# $(IO)/io: $(IO_OBJS) $(HEADERS) $(I)/libce.a
-# 	$(LD) $(LDFLAGS) -Ttext $(START_IO) -o $@ $(IO_OBJS) $(LDLIBS)
-
-# $(IO)/%.strip: $(IO)/%
-# 	$(STRIP) -s $< -o $@
-
 $(B)/libce.a: $(LIBCE_OBJECTS) $(HEADERS)
 	$(TOOLPREFIX)ar rcs $@ $(LIBCE_OBJECTS)
 
@@ -182,29 +162,21 @@ $(B)/libce.a: $(LIBCE_OBJECTS) $(HEADERS)
  $(B)/io.strip: $B/io
 	$(STRIP) -s $< -o $@
 
+$B/moduli.strip: $B/io.strip $B/user.strip
+	(printf "%d\n%d\n" $$(stat -c%s $B/io.strip) $$(stat -c%s $B/user.strip); cat $B/io.strip $B/user.strip) > $@
 
-#compile: $K/kernel $U/user.strip $(IO)/io.strip
 compile: $B/kernel $B/user.strip $B/io.strip
 
-#run: $K/kernel $U/user.strip $(IO)/io.strip
-#	$(RUN) -kernel $K/kernel -initrd $U/user.strip -initrd $(IO)/io.strip
-run: $B/kernel $B/user.strip $B/io.strip
-	$(RUN) -kernel $B/kernel -initrd $B/user.strip -initrd $B/io.strip
-#-initrd "$U/user.strip arg=foo,$(IO)/io.strip"
+run: $B/kernel $B/moduli.strip
+	$(RUN) -kernel $B/kernel -initrd $B/moduli.strip
 
-#debug: $K/kernel $U/user.strip $(IO)/io.strip
-#	$(DEBUG) -kernel $K/kernel -initrd $U/user.strip -initrd $(IO)/io.strip
-debug: $B/kernel $B/user.strip $B/io.strip
-	$(DEBUG) -kernel $B/kernel -initrd $B/user.strip -initrd $B/io.strip
-	
-#libce: $(I)/libce.a
+debug: $B/kernel $B/moduli.strip
+	$(DEBUG) -kernel $B/kernel -initrd $B/moduli.strip
+
 libce: $B/libce.a
 
 #keeps make from doing something with a file named clean
 .PHONY: clean
 
-#clean:
-#	rm -f $(ODIR)/*.o $K/kernel $U/user $U/user.strip $(IO)/io $(IO)/io.strip $(I)/lib*.a
-
 clean:
-	rm -f $(ODIR)/*.o $B/kernel $B/user $B/user.strip $B/io $B/io.strip $B/lib*.a
+	rm -f $(ODIR)/*.o $B/kernel $B/user $B/user.strip $B/io $B/io.strip $B/lib*.a $B/moduli.strip

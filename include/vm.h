@@ -57,6 +57,9 @@ const vaddr fin_mio_c = ini_mio_c + dim_region(MAX_LIV - 1) * N_MIO_C;
 const vaddr fin_utn_c = ini_utn_c + dim_region(MAX_LIV - 1) * N_UTN_C;
 const vaddr fin_utn_p = ini_utn_p + dim_region(MAX_LIV - 1) * N_UTN_P;
 
+/// Indirizzo base della memoria libera M2
+extern "C" natq start_M2;
+
 
 typedef natq tab_entry;
 

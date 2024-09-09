@@ -15,8 +15,20 @@ extern "C" natq __heap_start;
 /// Dimensione dello heap di sistema.
 const natq HEAP_SIZE = 1*MiB;
 
+/// Ultimo indirizzo del modulo sistema + heap sistema, fornito dal collegatore
+extern "C" natq end;
+
 /// Un primo des_proc, allocato staticamente, da usare durante l'inizializzazione.
 des_proc init;
+
+/// Indirizzo base dell'ELF del modulo IO
+natq start_io;
+
+/// Indirizzo base dell'ELF del modulo utente
+natq start_user;
+
+/// Indirizzo base della memoria libera M2
+natq start_M2;
 
 /*! @brief Corpo del processo main_sistema.
  *
@@ -38,6 +50,13 @@ natl crea_main_sistema()
 	processi++;
 	return m->id;
 }
+
+
+/// @brief Sposta i file ELF del modulo I/O ed utente nel primo frame libero dopo la fine 
+///        del modulo sistema
+///
+/// @note Setta le variabili @ref start_io e @ref start_user e @ref start_M2
+void sposta_ELF_moduli();
 
 /// @brief Crea le parti utente/condivisa e io/condivisa
 ///
@@ -64,6 +83,10 @@ extern "C" int boot_main(){
 	plic_init();
 	flog(LOG_INFO, "PLIC Initialized");
 
+	// Sposto i file ELF dei moduli I/O ed utente per allinearli 
+	// e liberare la memoria da essi occupata per i frame liberi di M2
+	sposta_ELF_moduli();
+	
 	// Inizializzazione dei frame della parte M2
 	init_frame();
 	
@@ -97,8 +120,8 @@ extern "C" int boot_main(){
 
 	// Usiamo come heap la parte di memoria comresa tra __heap_start e __heap_start + HEAP_SIZE
     heap_start = allinea(reinterpret_cast<void*>(&__heap_start), DIM_PAGINA);
-	heap_init(heap_start, HEAP_SIZE);
-	flog(LOG_INFO, "Heap del modulo sistema: [%p, %p)", heap_start, heap_start + HEAP_SIZE);
+	heap_init(heap_start, HEAP_SIZE+(start_M2 - start_io));
+	flog(LOG_INFO, "Heap del modulo sistema: [%p, %p)", heap_start, heap_start + HEAP_SIZE + (start_M2 - start_io));
 
 	flog(LOG_INFO, "Suddivisione della memoria virtuale:");
 	flog(LOG_INFO, "- sis/cond [%p, %p)", ini_sis_c, fin_sis_c);
@@ -368,8 +391,8 @@ vaddr carica_modulo(natq mod_start, paddr root_tab, natq flags, natq heap_size)
  */
  vaddr carica_IO(paddr root_tab)
  {
- 	flog(LOG_INFO, "mappo il modulo I/O:");
- 	return carica_modulo(IO_MOD_START, root_tab, 0, DIM_IO_HEAP);
+	flog(LOG_INFO, "mappo il modulo I/O:");
+ 	return carica_modulo(start_io, root_tab, 0, DIM_IO_HEAP);
  }
 
 /*! @brief Mappa il modulo utente.
@@ -381,7 +404,7 @@ vaddr carica_modulo(natq mod_start, paddr root_tab, natq flags, natq heap_size)
 vaddr carica_utente(paddr root_tab)
 {
 	flog(LOG_INFO, "mappo il modulo utente:");
-	return carica_modulo(USER_MOD_START, root_tab, BIT_U, DIM_USR_HEAP);
+	return carica_modulo(start_user, root_tab, BIT_U, DIM_USR_HEAP);
 }
 
 bool crea_spazio_condiviso(paddr root_tab)
@@ -394,5 +417,69 @@ bool crea_spazio_condiviso(paddr root_tab)
 		return false;
 
 	return true;
+}
+
+
+void sposta_ELF_moduli(){
+	flog(LOG_INFO, "Spostamento ed allineamento dei file ELF modulo I/O e utente");
+
+	char* puntatore_moduli = (char*) MOD_START;
+	natq lunghezza_header=0;
+	natq IO_size = 0;
+	natq user_size = 0;
+	natq exp = 1;
+	natq i=0;
+
+	//conto quanti  byte è lungo il size_file del modulo I/O
+	for(; *(puntatore_moduli+lunghezza_header) != '\n';lunghezza_header++){
+		exp *= 10;
+	}
+	exp/=10;
+
+	//converto la stringa in numero decimale
+	for(;i<lunghezza_header;i++){
+		//48 è ASCII code del carattere 0
+		natq conversione = *(puntatore_moduli+i)-48;
+		IO_size += conversione*exp;
+		exp/=10;
+	}
+	flog(LOG_INFO, "IO_size: %d byte", IO_size);
+
+	exp=1;
+	lunghezza_header++;
+	i=lunghezza_header;
+	//conto quanti  byte è lungo il size_file del modulo utente
+	for(; *(puntatore_moduli+lunghezza_header) != '\n';lunghezza_header++){
+		exp *= 10;
+	}
+	exp/=10;
+	//converto la stringa in numero decimale
+	for(;i<lunghezza_header;i++){
+		//48 è ASCII code del carattere 0
+		natq conversione = *(puntatore_moduli+i)-48;
+		user_size += conversione*exp;
+		exp/=10;
+	}
+	lunghezza_header++;
+
+	flog(LOG_INFO, "user_size: %d byte", user_size);
+
+	// Primo frame libero dopo il modulo sistema
+	natq moduli_base = allinea(reinterpret_cast<paddr>(&end),DIM_PAGINA);
+
+		
+	start_io = moduli_base;
+	flog(LOG_INFO, "new start io %p",start_io);
+
+	start_user = allinea(reinterpret_cast<paddr>(moduli_base + IO_size),DIM_PAGINA);
+	flog(LOG_INFO, "new start user %p",start_user);
+
+	start_M2 = allinea(reinterpret_cast<paddr>(start_user + user_size),DIM_PAGINA);
+	flog(LOG_INFO, "new start m2 %p",start_M2);
+
+	// Allineo entrambi gli elf alla pagina durante la copia
+	memcpy((void*) start_io,(void*)(puntatore_moduli+lunghezza_header),IO_size);
+	memcpy((void*) start_user,(void*)(puntatore_moduli+lunghezza_header+IO_size),user_size);
+	return;
 }
 
