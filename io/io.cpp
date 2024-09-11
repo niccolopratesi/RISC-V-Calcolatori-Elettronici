@@ -222,10 +222,11 @@ extern "C" void main(natq sem_io) {
         panic("Impossibile creare semaforo ioheap_mutex");
     }
 
+    natb* end_ = allinea(end,DIM_PAGINA);
     //inizializzazione heap modulo I/O
-    heap_init(allinea_ptr(end, DIM_PAGINA), DIM_IO_HEAP);
+    heap_init(allinea_ptr(end_, DIM_PAGINA), DIM_IO_HEAP);
 	flog(LOG_INFO, "Heap del modulo I/O: %lx [%p, %p)", DIM_IO_HEAP,
-			end, end + DIM_IO_HEAP);
+			end_, end_ + DIM_IO_HEAP);
 
     //inizializzazione periferiche
     flog(LOG_INFO,"Inizializzo la console (kbd + video)");
