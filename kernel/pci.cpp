@@ -7,36 +7,36 @@
 #include "libce.h"
 
 struct PCI_config{
-  natw vendorID;
-  natw deviceID;
+  natw vendor_id;
+  natw device_id;
   natw command;
   natw status;
-  natb revisionID;
-  natb progIF;
+  natb revision_id;
+  natb prog_if;
   natb subclass;
-  natb classcode;
-  natb cachelineSize;
-  natb latencyTimer;
-  natb headerType;
-  natb BIST;
+  natb class_code;
+  natb cache_line_size;
+  natb latency_timer;
+  natb header_type;
+  natb bist;
   natl bar0;
   natl bar1;
   natl bar2;
   natl bar3;
   natl bar4;
   natl bar5;
-  natl cardbus__cis_pointer;
-  natw subsystem_vendorID;
-  natw subsystemID;
-  natl expansionROMaddress;
+  natl cardbus_cis_pointer;
+  natw subsystem_vendor_id;
+  natw subsystem_id;
+  natl expansion_rom_base_address;
   natb capabilities_pointer;
   natb padding1;
   natw padding2;
   natl padding3;
-  natb interruptLine;
-  natb interruptPIN;
-  natb minGrant;
-  natb maxLatency;
+  natb interrupt_line;
+  natb interrupt_pin;
+  natb min_grant;
+  natb max_latency;
 };
 
 extern "C" void pci_init(){
@@ -48,7 +48,7 @@ extern "C" void pci_init(){
   natl  *ecam = (natl *) PCI_ECAM;
 
   // look at each device on bus 0.
-  for(int dev = 0; dev < 32; dev++){
+  for (int dev = 0; dev < 32; dev++) {
     int bus = 0;
     int func = 0;
     int offset = 0;
@@ -59,7 +59,7 @@ extern "C" void pci_init(){
     // struttura per configurare pci
     PCI_config *pointer = (PCI_config *)(ecam + off);
 
-    if(id == 0x11111234){
+    if (id == 0x11111234) {
       //flog(LOG_INFO,"VGA trovata");
       // PCI device ID 1111:1234 is VGA
       // VGA is at 00:01.0, using extended control registers (4096 bytes)
