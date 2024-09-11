@@ -5,6 +5,65 @@
 #include "io.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
+// @defgroup ioheap Memoria Dinamica
+//
+// Dal momento che le funzioni del modulo I/O sono eseguite coon le interruzioni esterne
+// mascherabili abilitate, dobbbiamo proteggere lo heap I/O con uun semaforo 
+// di mutuaa esclusione
+//
+// @{
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+natl ioheap_mutex;
+
+// indirizzo di partenza per l'heap del modulo I/O, fornito dal collegatore
+extern "C" natb end[];
+
+/*! @brief Alloca un oggetto nello heap I/O
+ *  @param s dimensione dell'oggetto
+ *  @return puntatore all'oggetto (nullptr se heap esaurito)
+ */
+void* operator new(size_t s)
+{
+	void* p;
+
+	sem_wait(ioheap_mutex);
+	p = alloca(s);
+	sem_signal(ioheap_mutex);
+
+	return p;
+}
+
+/*! @brief Alloca un oggetto nello heap I/O, con vincoli di allineamento
+ *  @param s dimensione dell'oggetto
+ *  @param a allineamento richiesto 
+ *  @return puntatore all'oggetto (nullptr se heap esaurito)
+ */
+void* operator new(size_t s, align_val_t a)
+{
+	void* p;
+
+	sem_wait(ioheap_mutex);
+	p = alloc_aligned(s,a);
+	sem_signal(ioheap_mutex);
+
+	return p;
+}
+
+/*! @brief Dealloca un oggetto restituendolo all'heap I/O
+ * @param p puntatore all'oggetto
+ */
+void operator delete(void* p)
+{
+	sem_wait(ioheap_mutex);
+	dealloca(p);
+	sem_signal(ioheap_mutex);
+}
+
+/// @}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 // @defgroup console Console
 //
 // Per console intendiamo l'unione della tastiera e del video(modalità testo)
@@ -156,13 +215,26 @@ extern "C" void panic(const char* msg){
  *  @param sem_io indice del semaforo di sincronizzazione
  */
 extern "C" void main(natq sem_io) {
-    
-    flog(LOG_INFO,"inizializzo la console (kbd + video)");
+
+    //inizializzazione semaforo mutua esclusione per heap
+    ioheap_mutex = sem_ini(1);
+    if(ioheap_mutex == 0xFFFFFFFF){
+        panic("Impossibile creare semaforo ioheap_mutex");
+    }
+
+    //inizializzazione heap modulo I/O
+    heap_init(allinea_ptr(end, DIM_PAGINA), DIM_IO_HEAP);
+	flog(LOG_INFO, "Heap del modulo I/O: %lx [%p, %p)", DIM_IO_HEAP,
+			end, end + DIM_IO_HEAP);
+
+    //inizializzazione periferiche
+    flog(LOG_INFO,"Inizializzo la console (kbd + video)");
     if(!console_init()){
-        panic("inizializzazione console fallita");
+        panic("Inizializzazione console fallita");
     }
     
-    flog(LOG_INFO,"inizializzazione modulo I/O completata");
+    flog(LOG_INFO,"Inizializzazione modulo I/O completata");
+
     sem_signal(sem_io);
     terminate_p();
 }

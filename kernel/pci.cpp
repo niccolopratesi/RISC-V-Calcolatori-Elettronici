@@ -93,8 +93,10 @@ extern "C" void pci_init(){
 
       //setup video mode
       //enable LFB and 8-bit DAC via 0xb0c3 bochs register
-      natw* bochs_pointer = (natw*) (VGA_MMIO_PORTS+0x508);
-      //*bochs_pointer = 0x60;  inutile?
+      // natw* bochs_pointer = (natw*) (VGA_MMIO_PORTS+0x508);
+      // *bochs_pointer = 0x60;
+      // natl* bochs_pointer2 = (natl*) (VGA_MMIO_PORTS+0x604);
+      // *bochs_pointer2 = 0x1e1e1e1e;
       
       flog(LOG_INFO,"Inizializzazione VGA in corso");
       vga_init();

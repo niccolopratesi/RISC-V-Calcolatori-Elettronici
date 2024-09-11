@@ -111,13 +111,29 @@ extern "C" void vga_init() {
 
   //scritture a 0xa0000 colorano la cella del carattere
   volatile natb *p = (natb *)(VGA_FRAMEBUFFER);
-
-  p[0] = 0x00;
+  p[0] = 0x40;
   p[1] = 0x0f;
-  for(int i=2;i<300;i+=2){
-    p[i] = 0x30;
-    p[i+1] = 0x0f;  //background rosso
-  }
+
+  p[6] = 0x20;
+  p[5] = 0x40;
+
+  p[8] = 0x03;
+  p[9] = 0x0f;
+
+//cella 80 riga 1
+  p[316] = 0x05;
+  p[317] = 0x0f;
+
+//   for(int i=4;i<300;i+=2){
+//     if(i==8){
+// p[i] = 0x30;
+//     p[i+1] = 0x40; 
+//     }else{
+// p[i] = 0x30;
+//     p[i+1] = 0x0f; 
+//     }
+     //background rosso
+//}
 
   // //scritture a 0xb8000 vengono ignorate, perché?
   // p = (natb *)(VGA_FRAMEBUFFER+0x18000);
@@ -152,7 +168,7 @@ extern "C" void vga_init() {
 
   // for(int i=0; i < 200;i++){
   //   for(int j=0; j < 320;j++){
-  //     if(j<1){
+  //     if(j<1 || j==2 || j==319){
 
   //       p[i*320 + j] = 0xfd;
   //     }else{
@@ -322,7 +338,7 @@ void init_GC(){
   writeport(GC, 0x06, 0x0E);
   //color don't care register
   writeport(GC, 0x07, 0x0F);
-  //writeport(GC, 0x07, 0x00);     ignorare o no i plane per comparare col colore?
+  //writeport(GC, 0x07, 0x00);?
   //bitmask register
   writeport(GC, 0x08, 0xFF);
 }
@@ -344,7 +360,6 @@ void init_CRTC(){
   writeport(CRTC, 0x09, 0x4f);
   //cursor start register: cursor enabled
   writeport(CRTC, 0x0a, 0x0D);
-  // writeport(CRTC, 0x0a, 0x10);  cursor scan line start?
 
   //cursor end register
   writeport(CRTC, 0x0b, 0x0E);
@@ -575,11 +590,12 @@ void load_font(unsigned char* font_16){
   //load palette into palette RAM via RGB values
   init_PD();
 
-  writeport(MISC, 0x00, 0x67);
   //reset index mode
   discard = VGA_BASE[INPUT_STATUS_REGISTER];
-  //set bit PAS -> attribute controller a regime
-  VGA_BASE[AC] = 0x20;  
+  //set bit PAS -> attribute controller a regime, abilita display
+  VGA_BASE[AC] = 0x20;
+  //reset index mode
+  discard = VGA_BASE[INPUT_STATUS_REGISTER];
 
   //modalità di accesso sequenziale
   writeport(SEQ, 0x04, 0x06);
@@ -587,27 +603,15 @@ void load_font(unsigned char* font_16){
   writeport(SEQ, 0x01, 0x23);
   //azzeriamo il graphics mode register
   writeport(GC, 0x05, 0x00);
-  
-  //selezioniamo zona a0000-affff e abilitiamo modalità grafica perchè?
+  //selezioniamo zona a0000-affff e abilitiamo modalità grafica
   writeport(GC, 0x06, 0x05);
-  
-
-
-  // seleziona plane 2 per trasferire dati in read mode e 
-  // seleziona regione 0xb8000 per la decodifica della vga 
-  // il font dove va caricato? in quale regione? 0xa0000 o 0xb8000
-  // writeport(GC, 0x06, 0x08);
-  // writeport(GC, 0x04, 0x08);
-
-
+  //font da AE000 a AFFFF
+  writeport(SEQ, 0x03, 0x3f);
   //selezioniamo plane 2
   writeport(SEQ, 0x02, 0x04);
 
-  //andrebbe prima prelevato da dove parte il segmento e scrivere a quell'offset
-  //leggendo GC 0x06   data>>=2 data&=3    1:A0000  2:B0000   3:B8000
-  //font da A0000 a A1FFF come specificato da SEQ03h
-  volatile void *vga_buf = (void *)VGA_FRAMEBUFFER; // 0xa0000
-  for (natl i = 0; i < 256; ++i) {
+  volatile void *vga_buf = (void *)(VGA_FRAMEBUFFER+0xe000*4+2); // 0xa0000
+  for (natl i = 0; i < 256; i++) {
     memcpy((void *)(vga_buf + 32 * i), (void*)(font_16+16 * i), 16);
   }
 
@@ -617,85 +621,7 @@ void load_font(unsigned char* font_16){
   writeport(SEQ, 0x02, 0x03);
   writeport(GC, 0x05, 0x10);
   writeport(GC, 0x06, 0x0e);
-
-  //writeport(GC, 0x04, 0x00);  //utile per reset piano 0 di lettura 
 }
-
-void post_font(){
-  writeport(SEQ, 0x04, 0x02);
-  // writeport(AC, 0x00, 0x00);
-  // writeport(AC, 0x01, 0x01);
-  // writeport(AC, 0x02, 0x02);
-  // writeport(AC, 0x03, 0x03);
-  // writeport(AC, 0x04, 0x04);
-  // writeport(AC, 0x05, 0x05);
-  // writeport(AC, 0x06, 0x14);
-  // writeport(AC, 0x07, 0x07);
-  // writeport(AC, 0x08, 0x38);
-  // writeport(AC, 0x09, 0x39);
-  // writeport(AC, 0x0a, 0x3a);
-  // writeport(AC, 0x0b, 0x3b);
-  // writeport(AC, 0x0c, 0x3c);
-  // writeport(AC, 0x0d, 0x3d);
-  // writeport(AC, 0x0e, 0x3e);
-  // writeport(AC, 0x0f, 0x3f);
-
-  // writeport(AC, 0x10, 0x0c);
-  // writeport(AC, 0x11, 0x00);
-  // writeport(AC, 0x12, 0x0f);
-  // writeport(AC, 0x13, 0x08);
-  // writeport(AC, 0x14, 0x00);
-
-  //writeport(SEQ, 0x00, 0x03);
-  writeport(SEQ, 0x01, 0x00);
-  writeport(SEQ, 0x02, 0x03);
-  //writeport(SEQ, 0x03, 0x00);
-  //writeport(SEQ, 0x04, 0x02);
-
-  // writeport(GC, 0x00, 0x00);
-  // writeport(GC, 0x01, 0x00);
-  // writeport(GC, 0x02, 0x00);
-  // writeport(GC, 0x03, 0x00);
-  // writeport(GC, 0x04, 0x00);
-  writeport(GC, 0x05, 0x10);
-  writeport(GC, 0x06, 0x0e);
-  // writeport(GC, 0x07, 0x0f);
-  // writeport(GC, 0x08, 0xff);
-
-  // writeport(CRTC, 0x11, 0x00);
-
-  // writeport(CRTC, 0x00, 0x5f);
-  // writeport(CRTC, 0x01, 0x4f);
-  // writeport(CRTC, 0x02, 0x50);
-  // writeport(CRTC, 0x03, 0x82);
-  // writeport(CRTC, 0x04, 0x55);
-  // writeport(CRTC, 0x05, 0x81);
-  // writeport(CRTC, 0x06, 0xbf);
-  // writeport(CRTC, 0x07, 0x1f);
-  // writeport(CRTC, 0x08, 0x00);
-  // writeport(CRTC, 0x09, 0x4f);
-  // writeport(CRTC, 0x0a, 0x0d);
-  // // writeport(CRTC, 0x0a, 0x10);//disable cursor
-  // writeport(CRTC, 0x0b, 0x0e);
-  // writeport(CRTC, 0x0c, 0x00);
-  // writeport(CRTC, 0x0d, 0x00);
-  // writeport(CRTC, 0x0e, 0x00);
-  // writeport(CRTC, 0x0f, 0x00);
-  // writeport(CRTC, 0x10, 0x9c);
-  // writeport(CRTC, 0x11, 0x8e);
-  // writeport(CRTC, 0x12, 0x8f);
-  // writeport(CRTC, 0x13, 0x28);
-  // writeport(CRTC, 0x14, 0x1f);
-  // writeport(CRTC, 0x15, 0x96);
-  // writeport(CRTC, 0x16, 0xb9);
-  // writeport(CRTC, 0x17, 0xa3);
-  // writeport(CRTC, 0x18, 0xff);
-
-  // writeport(MISC, 0x00, 0x67);
-  // discard = VGA_BASE[INPUT_STATUS_REGISTER];
-  // VGA_BASE[AC] = 0x20;
-}
-
 
 void print_VGA(char *message, natb fg, natb bg)
 {
@@ -723,21 +649,15 @@ void print_VGA(char *message, natb fg, natb bg)
 }
 
 void init_textmode_80x25(){
-  writeport(SEQ, 0x00, 0x01);
-  //writeport(SEQ, 0x00, 0x02);    //--check documentation
 
-  //writeport(MISC, 0x00, 0xc3);
-  writeport(MISC, 0x00, 0x67);   //--check documentation
+  writeport(MISC, 0x00, 0x67);
 
   init_SEQ();
   init_CRTC();
   init_GC();
-  init_AC();
+  init_AC(); 
 
   load_font(font_16);
-
-  //rigenera registri
-  //post_font();   si può evitare?
 }
 
 void init_graphicmode_320x200(){

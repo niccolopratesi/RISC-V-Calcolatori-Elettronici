@@ -118,7 +118,7 @@ extern "C" int boot_main(){
 
 	flog(LOG_INFO, "Nucleo di Calcolatori Elettronici - RISC-V");
 
-	// Usiamo come heap la parte di memoria comresa tra __heap_start e __heap_start + HEAP_SIZE
+	// Usiamo come heap la parte di memoria comresa tra __heap_start e __heap_start + HEAP_SIZE + (start_M2 - start_io)
     heap_start = allinea(reinterpret_cast<void*>(&__heap_start), DIM_PAGINA);
 	heap_init(heap_start, HEAP_SIZE+(start_M2 - start_io));
 	flog(LOG_INFO, "Heap del modulo sistema: [%p, %p)", heap_start, heap_start + HEAP_SIZE + (start_M2 - start_io));
@@ -195,22 +195,22 @@ void main_sistema(natq)
 	flog(LOG_INFO,"Creo il processo main I/O");
 	natl sync_io = sem_ini(0);
 	if (sync_io == 0xFFFFFFFF) {
-		flog(LOG_ERR, "impossibile allocare il semaforo di sincr per I/O");
+		flog(LOG_ERR, "Impossibile allocare il semaforo di sincr per I/O");
 		goto error;
 	}
 	id = activate_p(io_entry, sync_io, MAX_EXT_PRIO, LIV_SISTEMA);
 	if (id == 0xFFFFFFFF) {
-		flog(LOG_ERR, "impossibile creare il processo main I/O");
+		flog(LOG_ERR, "Impossibile creare il processo main I/O");
 		goto error;
 	}
-	flog(LOG_INFO,"attendo inizializzazione modulo I/O");
+	flog(LOG_INFO,"Attendo inizializzazione modulo I/O");
 	sem_wait(sync_io);
 
 	// creazione del processo main utente
 	flog(LOG_INFO, "Creo il processo main utente");
 	id = activate_p(user_entry, 0, MAX_PRIORITY, LIV_UTENTE);
 	if (id == 0xFFFFFFFF) {
-		flog(LOG_ERR, "impossibile creare il processo main utente");
+		flog(LOG_ERR, "Impossibile creare il processo main utente");
 		goto error;
 	}
 
@@ -443,7 +443,7 @@ void sposta_ELF_moduli(){
 		IO_size += conversione*exp;
 		exp/=10;
 	}
-	flog(LOG_INFO, "IO_size: %d byte", IO_size);
+	flog(LOG_DEBUG, "IO_size: %d byte", IO_size);
 
 	exp=1;
 	lunghezza_header++;
@@ -462,20 +462,20 @@ void sposta_ELF_moduli(){
 	}
 	lunghezza_header++;
 
-	flog(LOG_INFO, "user_size: %d byte", user_size);
+	flog(LOG_DEBUG, "user_size: %d byte", user_size);
 
 	// Primo frame libero dopo il modulo sistema
 	natq moduli_base = allinea(reinterpret_cast<paddr>(&end),DIM_PAGINA);
 
 		
 	start_io = moduli_base;
-	flog(LOG_INFO, "new start io %p",start_io);
+	flog(LOG_DEBUG, "new start io %p",start_io);
 
 	start_user = allinea(reinterpret_cast<paddr>(moduli_base + IO_size),DIM_PAGINA);
-	flog(LOG_INFO, "new start user %p",start_user);
+	flog(LOG_DEBUG, "new start user %p",start_user);
 
 	start_M2 = allinea(reinterpret_cast<paddr>(start_user + user_size),DIM_PAGINA);
-	flog(LOG_INFO, "new start m2 %p",start_M2);
+	flog(LOG_DEBUG, "new start m2 %p",start_M2);
 
 	// Allineo entrambi gli elf alla pagina durante la copia
 	memcpy((void*) start_io,(void*)(puntatore_moduli+lunghezza_header),IO_size);
