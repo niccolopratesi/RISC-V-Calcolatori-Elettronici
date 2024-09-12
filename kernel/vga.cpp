@@ -80,7 +80,7 @@ void init_PD();
 void load_font(unsigned char* font_16);
 void load_palette();
 void post_font();
-void print_VGA(char *message, natb fg, natb bg);
+void print_VGA(char *message, natb attr);
 void clear_screen(natb fg, natb bg);
 
 // write to this to discard data
@@ -111,25 +111,13 @@ extern "C" void vga_init() {
 
   //scritture a 0xa0000 colorano la cella del carattere
   volatile natb *p = (natb *)(VGA_FRAMEBUFFER);
-  p[0] = 0x40;
-  p[1] = 0x0f;
 
-  p[6] = 0x20;
-  p[5] = 0x40;
-
-  p[8] = 0x03;
-  p[9] = 0x0f;
-
-//cella 80 riga 1
-  p[316] = 0x05;
-  p[317] = 0x0f;
-
-  int j=0;
-  for(int i=0;i<2000;i++){
-    p[4*i]=j;
-    p[4*i+1]=0x0f;
-    j++;
-  }
+  // int j=0;
+  // for(int i=0;i<2000;i++){
+  //   p[4*i]=j;
+  //   p[4*i+1]=0x0f;
+  //   j++;
+  // }
 
 //   for(int i=4;i<300;i+=2){
 //     if(i==8){
@@ -154,7 +142,7 @@ extern "C" void vga_init() {
   //0x0F = bright white on black background
   //clear_screen(0x00,0x0F);
 
-  //print_VGA("Hello RISC-V world!\n", 0x02, 0x00);
+  print_VGA("Hello RISC-V world!  jefjeifiewfj weifjwi deidjwei kldkdkddk dkdkdkkkd pippo puppa\n", 0x0f);
 
 
 
@@ -635,26 +623,33 @@ void load_font(unsigned char* font_16){
   writeport(GC, 0x06, 0x0e);
 }
 
-void print_VGA(char *message, natb fg, natb bg)
+void print_VGA(char *message, natb attr)
 {
-  volatile natb *p = (natb*)(VGA_FRAMEBUFFER | (0xb8000 - 0xa0000));// 0xb8000
+  volatile natb *p = (natb*)(VGA_FRAMEBUFFER);
   // posizione attuale del cursore
   int cursor = readport(CRTC, 0x0f);
   cursor = (cursor+1)*2 -2; // dove scrivere
+  int j = cursor*4;
   while(*message){
-    //se dobbiamo andare a capo
-    if(*message !=  0x0a){
-      p[cursor++] = *message;
-      p[cursor++] = (bg<<4) | fg;
+    
+    if(*message !=  '\0' && *message !=  '\n' ){
+      p[j] = *message;
+      p[j+1] = attr;
+      j+=4;
+      cursor+=2;
     }
     else{
-      int line_offset = cursor%(VGA_TEXT_WIDTH*2);
-      cursor = cursor + VGA_TEXT_WIDTH*2 - line_offset;
+      //andare a capo
+      // int line_offset = cursor%(VGA_TEXT_WIDTH*2);
+      // cursor = cursor + VGA_TEXT_WIDTH*2 - line_offset;
     }
     message++;
   }
-  p[cursor++] = ' ';
-  p[cursor++] = (bg<<4) | fg;
+
+  //riposiziono il cursore su uno spazio vuoto
+  p[j] = 0x00;
+  p[j+1] = attr;
+  cursor+=2;
   // nuova posizione del cursore
   writeport(CRTC, 0x0e, (cursor/2 -1) >> 8);
   writeport(CRTC, 0x0f, (cursor/2 -1) & 0xff);
