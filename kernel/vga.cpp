@@ -124,6 +124,13 @@ extern "C" void vga_init() {
   p[316] = 0x05;
   p[317] = 0x0f;
 
+  int j=0;
+  for(int i=0;i<2000;i++){
+    p[4*i]=j;
+    p[4*i+1]=0x0f;
+    j++;
+  }
+
 //   for(int i=4;i<300;i+=2){
 //     if(i==8){
 // p[i] = 0x30;
@@ -611,8 +618,13 @@ void load_font(unsigned char* font_16){
   writeport(SEQ, 0x02, 0x04);
 
   volatile void *vga_buf = (void *)(VGA_FRAMEBUFFER+0xe000*4+2); // 0xa0000
+  natl padding = 0;
   for (natl i = 0; i < 256; i++) {
-    memcpy((void *)(vga_buf + 32 * i), (void*)(font_16+16 * i), 16);
+    //memcpy((void *)(vga_buf + 32 * i), (void*)(font_16+16 * i), 16);
+    for(natl j = 0; j < 16; j++){
+        memcpy((void *)(vga_buf + 64 * i + 64 * padding + 4 * j), (void*)(font_16+16 * i+j), 1);
+    }
+    padding++;
   }
 
   //rigenera registri
