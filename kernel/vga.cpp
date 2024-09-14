@@ -119,32 +119,9 @@ extern "C" void vga_init() {
   //   j++;
   // }
 
-//   for(int i=4;i<300;i+=2){
-//     if(i==8){
-// p[i] = 0x30;
-//     p[i+1] = 0x40; 
-//     }else{
-// p[i] = 0x30;
-//     p[i+1] = 0x0f; 
-//     }
-     //background rosso
-//}
-
-  // //scritture a 0xb8000 vengono ignorate, perché?
-  // p = (natb *)(VGA_FRAMEBUFFER+0x18000);
-  // p[0] = 0x00;
-  // p[1] = 0x0f;
-  // for(int i=2;i<300*200;i+=2){
-  //   p[i] = 0x10;
-  //   p[i+1] = 0x0f;
-  // }
-
-  //0x0F = bright white on black background
-  //clear_screen(0x00,0x0F);
-
-  print_VGA("Hello RISC-V world!  jefjeifiewfj weifjwi deidjwei kldkdkddk dkdkdkkkd pippo puppa\n", 0x0f);
-
-
+  print_VGA("Hello RISC-V world!", 0x0f);
+  print_VGA("This is a very very very long text, really really really long, to try it out", 0x0f);
+  print_VGA("\nLet's go on a new line", 0x0f);
 
   // //modalità grafica
   // init_graphicmode_320x200();
@@ -163,7 +140,7 @@ extern "C" void vga_init() {
 
   // for(int i=0; i < 200;i++){
   //   for(int j=0; j < 320;j++){
-  //     if(j<1 || j==2 || j==319){
+  //     if(j<5 || j>314 || j== 159 || j==160){
 
   //       p[i*320 + j] = 0xfd;
   //     }else{
@@ -175,16 +152,12 @@ extern "C" void vga_init() {
   flog(LOG_INFO,"VGA inizializzata");
 }
 
-void clear_screen(natb bg, natb fg){
-  volatile natb *p = (natb *)(VGA_FRAMEBUFFER | (0xb8000 - 0xa0000));// 0xb8000
+void clear_screen(natb attr){
+  volatile natb *p = (natb *) VGA_FRAMEBUFFER;
 
-  fg &= 0xf;
-
-  natb attribute = (bg << 4) | fg;
-
-  for(int i=0;i<VGA_TEXT_WIDTH*VGA_TEXT_HEIGHT;i+=2){
+  for(int i=0;i<VGA_TEXT_WIDTH*VGA_TEXT_HEIGHT;i+=4){
     p[i] = ' ';
-    p[i+1] = attribute;
+    p[i+1] = attr;
   }
 }
 
@@ -629,23 +602,24 @@ void print_VGA(char *message, natb attr)
   // posizione attuale del cursore
   int cursor = readport(CRTC, 0x0f);
   cursor = (cursor+1)*2 -2; // dove scrivere
-  int j = cursor*4;
+  int j;
   while(*message){
-    
-    if(*message !=  '\0' && *message !=  '\n' ){
-      p[j] = *message;
-      p[j+1] = attr;
-      j+=4;
-      cursor+=2;
+    // il numero della cella è cursor/2 mentre il byte da scrivere è numero della cella * 4
+    j = cursor/2*4;
+
+    if(*message ==  '\n'){
+      int line_offset = cursor % (VGA_TEXT_WIDTH*2);
+      cursor = cursor + VGA_TEXT_WIDTH*2 - line_offset;
     }
     else{
-      //andare a capo
-      // int line_offset = cursor%(VGA_TEXT_WIDTH*2);
-      // cursor = cursor + VGA_TEXT_WIDTH*2 - line_offset;
+      p[j] = *message;
+      p[j+1] = attr;
+      cursor+=2;
     }
     message++;
   }
 
+  j = cursor/2*4;
   //riposiziono il cursore su uno spazio vuoto
   p[j] = 0x00;
   p[j+1] = attr;
@@ -736,37 +710,18 @@ void init_graphicmode_320x200(){
   writeport(AC, 0x13, 0x00);
   writeport(AC, 0x14, 0x00);
 
-  // Enable display
-  //writeport(AC, 0xff, 0x20);
   //reset index mode
   discard = VGA_BASE[INPUT_STATUS_REGISTER];
   //set bit PAS -> attribute controller a regime
   //abilita lo schermo
   VGA_BASE[AC] = 0x20; 
 
-
   load_palette();
 }
 
 void load_palette(){
-  // configura una VGA palette personalizzata
-  // for (int i = 0; i < 256; i++) {
-  //   std_palette[i] = 0;
-  //   std_palette[i] |= ((i & 0xc0)) << 16;
-  //   std_palette[i] |= ((i & 0x38) << 2) << 8;
-  //   std_palette[i] |= ((i & 0x07) << 5);
-  // }
-  // std_palette[255] = 0xfcfcfc;
-
-
-
   // Set default VGA palette
   writeport(PC, 0xff, 0x00);
-  // for (int i = 0; i < 256; i++) {
-  //   writeport(PD, 0xff, (std_palette[i] & 0xfc0000) >> 18);
-  //   writeport(PD, 0xff, (std_palette[i] & 0x00fc00) >> 10);
-  //   writeport(PD, 0xff, (std_palette[i] & 0x0000fc) >> 2);
-  // }
 
   for (int i = 0; i < 256; i++) {
     writeport(PD, 0xff, (std_palette[i] & 0xff0000) >> 16);
