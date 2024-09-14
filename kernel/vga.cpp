@@ -81,7 +81,8 @@ void load_font(unsigned char* font_16);
 void load_palette();
 void post_font();
 void print_VGA(char *message, natb attr);
-void clear_screen(natb fg, natb bg);
+void clear_screen(natb attr);
+void scroll();
 
 // write to this to discard data
 volatile natb __attribute__((unused)) discard; 
@@ -95,16 +96,6 @@ static inline natw encode_char(char c, natb fg, natb bg) {
   return ((bg & 0xf) << 4 | (fg & 0xf)) << 8 | c;
 }
 
-
-// static inline void memcpy(void *dest, const void *src,natl n){
-//   unsigned char *d = (unsigned char *)dest;
-//   const unsigned char *s = (unsigned char *)src;
-
-//   for (natl i = 0; i < n; i++) {
-//     *(d + i) = *(s + i);
-//   }
-// }
-
 extern "C" void vga_init() {
 
   init_textmode_80x25();
@@ -112,6 +103,7 @@ extern "C" void vga_init() {
   //scritture a 0xa0000 colorano la cella del carattere
   volatile natb *p = (natb *)(VGA_FRAMEBUFFER);
 
+  //test font
   // int j=0;
   // for(int i=0;i<2000;i++){
   //   p[4*i]=j;
@@ -119,25 +111,21 @@ extern "C" void vga_init() {
   //   j++;
   // }
 
+  //test clear
+  clear_screen(0x0f);
+  //test print
   print_VGA("Hello RISC-V world!", 0x0f);
   print_VGA("This is a very very very long text, really really really long, to try it out", 0x0f);
-  print_VGA("\nLet's go on a new line", 0x0f);
+  print_VGA("\nLet's go on a new line\n", 0x0f);
+
+  //test scroll
+  scroll();
+
 
   // //modalità grafica
   // init_graphicmode_320x200();
 
   // //test graphic mode
-  // //metà schermo rosso e metà schermo verde
-  // //sia verticalmente che orizzontalmente
-
-  // for(int i=0; i < 320*100;i++){
-  //   p[i] = 0xfe;
-  // }
-  // for(int i=320*100; i < 320*200;i++){
-  //   p[i] = 0xfd;
-  // }
-
-
   // for(int i=0; i < 200;i++){
   //   for(int j=0; j < 320;j++){
   //     if(j<5 || j>314 || j== 159 || j==160){
@@ -155,10 +143,30 @@ extern "C" void vga_init() {
 void clear_screen(natb attr){
   volatile natb *p = (natb *) VGA_FRAMEBUFFER;
 
-  for(int i=0;i<VGA_TEXT_WIDTH*VGA_TEXT_HEIGHT;i+=4){
+  for(int i=0;i<VGA_TEXT_WIDTH*VGA_TEXT_HEIGHT*4;i+=4){
     p[i] = ' ';
     p[i+1] = attr;
   }
+}
+
+void scroll(){
+  natb work = 0x0f;
+  volatile natb *p = (natb *) VGA_FRAMEBUFFER;
+  for(unsigned int i = 0; i < VGA_TEXT_WIDTH*VGA_TEXT_HEIGHT*4 - 80*4; i+=4)
+    p[i] = p[i+80*4];
+  for(unsigned int i = 0; i < 80*4; i+=4){
+    p[VGA_TEXT_WIDTH*VGA_TEXT_HEIGHT*4 - 80*4 + i] = ' ';
+    p[VGA_TEXT_WIDTH*VGA_TEXT_HEIGHT*4 - 80*4 + i + 1] = work;
+  }
+
+  int cursor = readport(CRTC, 0x0f);
+  //posizione del cursore
+  cursor = (cursor+1)*2 -2;
+  //tolgo una riga al cursore
+  cursor = cursor - VGA_TEXT_WIDTH*2 + 2;
+  //nuova posizione del cursore
+  writeport(CRTC, 0x0e, (cursor/2 -1) >> 8);
+  writeport(CRTC, 0x0f, (cursor/2 -1) & 0xff);
 }
 
 natb readport(natl port, natb index) {
