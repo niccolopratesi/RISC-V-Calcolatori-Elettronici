@@ -75,6 +75,7 @@ void* alloca(size_t dim)
 		
 	}
 
+
 	// restituiamo l'indirizzo della zona allocata (nullptr se non è stato
 	// possibile allocare).  NOTA: il descrittore della zona si trova nei
 	// byte immediatamente precedenti l'indirizzo "p".  Questo è 

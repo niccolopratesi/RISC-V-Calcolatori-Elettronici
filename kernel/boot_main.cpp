@@ -77,8 +77,8 @@ extern "C" int boot_main(){
 
 	flog(LOG_INFO, "Running in S-Mode");
 
-	pci_init();
-	flog(LOG_INFO, "PCI initialized");
+	// pci_init();
+	// flog(LOG_INFO, "PCI initialized");
 
 	plic_init();
 	flog(LOG_INFO, "PLIC Initialized");
@@ -118,9 +118,9 @@ extern "C" int boot_main(){
 
 	flog(LOG_INFO, "Nucleo di Calcolatori Elettronici - RISC-V");
 
-	// Usiamo come heap la parte di memoria comresa tra __heap_start e __heap_start + HEAP_SIZE + (start_M2 - start_io)
-    heap_start = allinea(reinterpret_cast<void*>(&__heap_start), DIM_PAGINA);
-	heap_init(heap_start, HEAP_SIZE+(start_M2 - start_io));
+	// Usiamo come heap la parte di memoria compresa tra __heap_start e __heap_start + HEAP_SIZE + (start_M2 - start_io)
+  heap_start = allinea(reinterpret_cast<void*>(&__heap_start), DIM_PAGINA);
+	heap_init(0, 0, (natq) heap_start, (natq) heap_start + HEAP_SIZE + (start_M2 - start_io));
 	flog(LOG_INFO, "Heap del modulo sistema: [%p, %p)", heap_start, heap_start + HEAP_SIZE + (start_M2 - start_io));
 
 	flog(LOG_INFO, "Suddivisione della memoria virtuale:");
@@ -129,6 +129,9 @@ extern "C" int boot_main(){
 	flog(LOG_INFO, "- io /cond [%p, %p)", ini_mio_c, fin_mio_c);
 	flog(LOG_INFO, "- usr/cond [%p, %p)", ini_utn_c, fin_utn_c);
 	flog(LOG_INFO, "- usr/priv [%p, %p)", ini_utn_p, fin_utn_p);
+
+	pci_init();
+	flog(LOG_INFO, "PCI initialized");
 
 	// Le parti sis/priv e usr/priv verranno create da crea_processo() ogni
 	// volta che si attiva un nuovo processo.  La parte sis/cond contiene

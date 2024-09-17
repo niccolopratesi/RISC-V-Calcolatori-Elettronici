@@ -74,7 +74,7 @@ bool pci_find_dev(natb& bus, natb& dev, natb& fun, natw vendorID, natw deviceID)
 bool pci_find_class(natb& bus, natb& dev, natb& fun, natb code[]);
 bool pci_next(natb& bus, natb& dev,natb& fun);
 // Funzioni per lo heap
-void heap_init(void *start, size_t size);
+void heap_init(void *start, size_t size, natq initmem = 0, natq initdim = 0);
 void* alloca(size_t dim);
 enum class align_val_t : size_t {};
 void* alloc_aligned(size_t dim, align_val_t align);
