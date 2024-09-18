@@ -41,4 +41,10 @@ struct virtio_input_config {
   } u;
 };
 
+struct virtio_input_event {
+  natw type;
+  natw code;
+  natl value;
+};
+
 #endif /* VIRTIOINPUT_H */

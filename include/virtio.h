@@ -112,4 +112,12 @@ struct virtio_pci_notify_cap {
 #define DEVICE_NEEDS_RESET_BIT  64
 #define FAILED_STATUS_BIT       128
 
+#define VIRTIO_F_INDIRECT_DESC  28
+#define VIRTIO_F_EVENT_IDX      29
+#define VIRTIO_F_VERSION_1      32
+#define VIRTIO_F_RING_RESET     40
+
+bool crea_virtq(virtq &queue, natw queue_size, natw avail_flags);
+void assign_virtq(virtq queue, virtio_pci_common_cfg *comm_cfg);
+
 #endif /* VIRTIO_H */
