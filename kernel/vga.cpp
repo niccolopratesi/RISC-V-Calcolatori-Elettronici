@@ -116,10 +116,10 @@ extern "C" void vga_init() {
   //test print
   print_VGA("Hello RISC-V world!", 0x0f);
   print_VGA("This is a very very very long text, really really really long, to try it out", 0x0f);
-  print_VGA("\nLet's go on a new line\n", 0x0f);
+  //print_VGA("\nLet's go on a new line", 0x0f);
 
   //test scroll
-  scroll();
+  //scroll();
 
 
   // //modalità grafica
@@ -162,8 +162,16 @@ void scroll(){
   int cursor = readport(CRTC, 0x0f);
   //posizione del cursore
   cursor = (cursor+1)*2 -2;
+  if(cursor < VGA_TEXT_WIDTH*2){
+    //se siamo nella prima riga, il cursore viene posto in cima alla riga
+    writeport(CRTC, 0x0e, 0x00);
+    writeport(CRTC, 0x0f, 0x00);
+    return;
+  }
+    
   //tolgo una riga al cursore
   cursor = cursor - VGA_TEXT_WIDTH*2 + 2;
+  
   //nuova posizione del cursore
   writeport(CRTC, 0x0e, (cursor/2 -1) >> 8);
   writeport(CRTC, 0x0f, (cursor/2 -1) & 0xff);
@@ -225,15 +233,15 @@ void writeport(natl port, natb index, natb val) {
     case SEQ:
       //sequencer register riceve prima l'indice nell'address register
       //poi scrive il dato nel data register (1 byte successivo)
-      VGA_BASE[port] = index;
-      VGA_BASE[port + 1] = val;
-      break;
+      // VGA_BASE[port] = index;
+      // VGA_BASE[port + 1] = val;
+      // break;
     case GC:
       //graphics register riceve prima l'indice nell'address register
       //poi scrive il dato nel data register (1 byte successivo)
-      VGA_BASE[port] = index;
-      VGA_BASE[port + 1] = val;
-      break;
+      // VGA_BASE[port] = index;
+      // VGA_BASE[port + 1] = val;
+      // break;
     case CRTC:
       //cathode ray tube controller register riceve prima l'indice nell'address register
       //poi scrive il dato nel data register (1 byte successivo)

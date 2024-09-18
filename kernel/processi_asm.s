@@ -357,15 +357,13 @@ setSPreviousInterruptEnable:
 	addi sp,sp,8
     ret
 
-.global halt # CAMBIO
+.global halt
 halt:
     wfi
-    j halt
     ret
 
     .global end_program
 end_program:
 	call reboot
-	call halt
-	ret
+	wfi
 	
