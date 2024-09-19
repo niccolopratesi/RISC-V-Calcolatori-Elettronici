@@ -16,7 +16,7 @@ struct PCI_config {
   natb prog_if;
   natb subclass;
   natb class_code;
-  natb cache_line_size;   
+  natb cache_line_size;
   natb latency_timer;
   natb header_type;
   natb bist;
@@ -24,8 +24,8 @@ struct PCI_config {
   natl bar1;
   natl bar2;
   natl bar3;
-  natl bar4; 
-  natl bar5;  
+  natl bar4;
+  natl bar5;
   natl cardbus_cis_pointer;
   natw subsystem_vendor_id;
   natw subsystem_id;
@@ -36,5 +36,29 @@ struct PCI_config {
   natb interrupt_pin;
   natb min_grant;
   natb max_latency;
+};
+
+struct MSIX_capability {
+  natb id;
+  natb next_pointer;
+  natw message_control;
+  natl table_offset;
+  natl pending_bit_offset;
+};
+
+struct MSIX_entry {
+  natl message_address;
+  natl message_upper_address;
+  natl message_data;
+  natl vector_control;
+};
+
+struct MSIX_PBA_entry {
+  natq pending_bits;
+};
+
+struct capability_elem {
+  natb id;
+  natb next_pointer;
 };
 
