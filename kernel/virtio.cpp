@@ -10,22 +10,22 @@ bool crea_virtq(virtq &queue, natw queue_size, natw avail_flags)
   int avail_size = 6 + 2 * queue_size;
   int used_size = 6 + 8 * queue_size;
 
-  queue.num = queue_size;
+  queue.num = 0;
 
-  queue.desc = (virtq_desc *) alloca(desc_size);
+  queue.desc = (virtq_desc *) alloc_aligned(desc_size, align_val_t(16));
   if (!queue.desc) {
     goto err_desc;
   }
   memset(queue.desc, 0, desc_size);
 
-  queue.avail = (virtq_avail *) alloca(avail_size);
+  queue.avail = (virtq_avail *) alloc_aligned(avail_size, align_val_t(2));
   if (!queue.avail) {
     goto err_avail;
   }
   memset(queue.avail, 0, avail_size);
   queue.avail->flags = avail_flags;
 
-  queue.used = (virtq_used*) alloca(used_size);
+  queue.used = (virtq_used*) alloc_aligned(used_size, align_val_t(4));
   if (!queue.used) {
     goto err_used;
   }
