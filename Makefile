@@ -84,6 +84,8 @@ RUNFLAGS += -bios none
 RUNFLAGS += -gdb tcp::1234
 RUNFLAGS += -m 128M
 RUNFLAGS += -device VGA
+RUNFLAGS += -device virtio-keyboard
+# RUNFLAGS += -device virtio-input-host-pci,evdev=/dev/input/by-path/platform-i8042-serio-0-event-kbd
 RUNFLAGS += -serial stdio
 RUNFLAGS += -smp 1
 
@@ -93,6 +95,7 @@ DEBUGFLAGS += -bios none
 DEBUGFLAGS += -gdb tcp::1234
 DEBUGFLAGS += -m 128M
 DEBUGFLAGS += -device VGA
+DEBUGFLAGS += -device virtio-keyboard
 DEBUGFLAGS += -serial stdio
 DEBUGFLAGS += -smp 1
 DEBUGFLAGS += -S

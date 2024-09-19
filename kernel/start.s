@@ -13,8 +13,8 @@ start:
 
   # delegate all interrupts and exceptions to supervisor mode
   li t0, 0xffffffffffffffff
-  csrw medeleg, t0
-  csrw mideleg, t0
+  # csrw medeleg, t0
+  # csrw mideleg, t0
 
   # set machine_handler as Machine interrupt handler
   la t0, machine_interrupts
