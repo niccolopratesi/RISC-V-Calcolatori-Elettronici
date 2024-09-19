@@ -105,6 +105,8 @@ struct virtio_pci_notify_cap {
 #define ISR_QUEUE_INT_BIT                 1
 #define ISR_DEVICE_CONFIGURATION_INT_BIT  2
 
+#define VIRTIO_MSI_NO_VECTOR  0xffff
+
 #define ACKNOWLEDGE_STATUS_BIT  1
 #define DRIVER_STATUS_BIT       2
 #define DRIVER_OK_STATUS_BIT    4
