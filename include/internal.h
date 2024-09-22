@@ -1,3 +1,5 @@
+#ifndef INTERNAL_H
+#define INTERNAL_H
 #include "libce.h"
 
 extern "C" void init_gdt();
@@ -14,3 +16,4 @@ extern "C" void sti();
 extern "C" void panic(const char *msg);
 extern "C" void ctors();
 extern "C" void dtors();
+#endif

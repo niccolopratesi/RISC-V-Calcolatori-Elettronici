@@ -35,6 +35,7 @@
 #include "palette.h"
 #include "costanti.h"
 #include "libce.h"
+#include "vid.h"
 
 /*
 //standard vga ports
@@ -86,11 +87,12 @@ void scroll();
 
 // write to this to discard data
 volatile natb __attribute__((unused)) discard; 
+
 // vga framebuffer
-char *vga_buf;
+char *vga_buf = (char *)(VGA_FRAMEBUFFER);
 
 //memory mapped IO ports base
-static volatile natb *const VGA_BASE = (natb *)VGA_MMIO_PORTS;
+volatile natb *const VGA_BASE = (natb *)VGA_MMIO_PORTS;
 
 static inline natw encode_char(char c, natb fg, natb bg) {
   return ((bg & 0xf) << 4 | (fg & 0xf)) << 8 | c;
@@ -110,16 +112,19 @@ extern "C" void vga_init() {
   //   p[4*i+1]=0x0f;
   //   j++;
   // }
-
   //test clear
-  clear_screen(0x0f);
+  vid::clear_screen(0x0f);
+
   //test print
-  print_VGA("Hello RISC-V world!", 0x0f);
-  print_VGA("This is a very very very long text, really really really long, to try it out", 0x0f);
-  //print_VGA("\nLet's go on a new line", 0x0f);
+  // print_VGA("Hello RISC-V world!", 0x0f);
+  // print_VGA("This is a very very very long text, really really really long, to try it out", 0x0f);
+  // print_VGA("\nLet's go on a new line", 0x0f);
+  vid::str_write("Hello RISC-V world!");
+  vid::str_write("This is a very very very long text, really really really long, to try it out");
+  vid::str_write("\nLet's go on a new line");
 
   //test scroll
-  //scroll();
+  //vid::scroll();
 
 
   // //modalità grafica
@@ -152,8 +157,10 @@ void clear_screen(natb attr){
 void scroll(){
   natb work = 0x0f;
   volatile natb *p = (natb *) VGA_FRAMEBUFFER;
-  for(unsigned int i = 0; i < VGA_TEXT_WIDTH*VGA_TEXT_HEIGHT*4 - 80*4; i+=4)
+  for(unsigned int i = 0; i < VGA_TEXT_WIDTH*VGA_TEXT_HEIGHT*4 - 80*4; i+=4){
     p[i] = p[i+80*4];
+    p[i+1] = p[i+80*4+1];
+  }
   for(unsigned int i = 0; i < 80*4; i+=4){
     p[VGA_TEXT_WIDTH*VGA_TEXT_HEIGHT*4 - 80*4 + i] = ' ';
     p[VGA_TEXT_WIDTH*VGA_TEXT_HEIGHT*4 - 80*4 + i + 1] = work;
@@ -372,208 +379,18 @@ void init_CRTC(){
 }
 
 void init_PD(){
-
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-}
-
-void load_font(unsigned char* font_16){
   //color registers
   //start index of DAC entry at 0 
   VGA_BASE[PC] = 0x0;
   //load palette into palette RAM via RGB values
-  init_PD();
+  //init_PD();
+  for(int i = 0; i < 64 * 3; i++){
+    VGA_BASE[PD] = text_palette[i];
+  }
+}
 
+void load_font(unsigned char* font_16){
+  
   //reset index mode
   discard = VGA_BASE[INPUT_STATUS_REGISTER];
   //set bit PAS -> attribute controller a regime, abilita display
@@ -653,7 +470,7 @@ void init_textmode_80x25(){
   init_CRTC();
   init_GC();
   init_AC(); 
-
+  init_PD();
   load_font(font_16);
 }
 

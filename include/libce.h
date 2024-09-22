@@ -3,14 +3,16 @@
 #include "tipo.h"
 #include "read_write_reg.h"
 // Funzioni per leggere da o scrivere in un registro dello spazio di I/O
-extern "C" natb inputb(ioaddr reg);
-extern "C" void outputb(natb a, ioaddr reg);
-extern "C" natw inputw(ioaddr reg);
-extern "C" void outputw(natw a, ioaddr reg);
-extern "C" natl inputl(ioaddr reg);
-extern "C" void outputl(natl a, ioaddr reg);
-extern "C" void outputbw(natw vetto[], int quanti, ioaddr reg);
-extern "C" void inputbw(ioaddr reg, natw vetti[], int quanti);
+// extern "C" natb inputb(ioaddr reg);
+// extern "C" void outputb(natb a, ioaddr reg);
+// extern "C" natw inputw(ioaddr reg);
+// extern "C" void outputw(natw a, ioaddr reg);
+// extern "C" natl inputl(ioaddr reg);
+// extern "C" void outputl(natl a, ioaddr reg);
+// extern "C" void outputbw(natw vetto[], int quanti, ioaddr reg);
+// extern "C" void inputbw(ioaddr reg, natw vetti[], int quanti);
+//-- MEMORY MAPPED IO
+
 // Funzioni per leggere da tastiera
 natb get_code();
 char conv(natb c);
@@ -22,10 +24,14 @@ void disable_intr_kbd();
 void drain_kbd();
 // Funzione per configurare la modalità video
 volatile natb* bochsvga_config(natw max_screenx, natw max_screeny);
-// Funzioni per scrivere sul video
-void clear_screen(natb col);
-void char_write(natb c);
-void str_write(const char str[]);
+namespace vid{
+	// Funzioni supporto video
+	void clear_screen(natb col);
+	void char_write(natb c);
+	void str_write(const char str[]);
+	natl cols();
+	natl rows();
+}
 // Funzioni per leggere da o scrivere sul primo hard disk
 enum hd_cmd {
 	WRITE_SECT = 0x30,

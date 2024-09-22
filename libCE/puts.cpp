@@ -1,4 +1,7 @@
-#include "internal.h"
+#include "libce.h"
+#include "vid.h"
+using namespace vid;
+
 int puts(const char *buf)
 {
         str_write(buf);

@@ -168,7 +168,7 @@ extern "C" natq c_readconsole(char* buff, natq quanti){
     sem_wait(p_des->mutex);
     #ifndef AUTOCORR
         for(natq i = 0;i < quanti;i++){
-            //vid::char_write(buff[i]);  print vga fa la stessa cosa
+            vid::char_write(buff[i]);
         }
     #else /*AUTOCORR*/
         if(quanti > 0 && buff[[quanti-1]] == '\n')
