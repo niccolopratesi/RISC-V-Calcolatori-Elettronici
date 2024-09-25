@@ -11,9 +11,6 @@ namespace vid{
 			video[i+1] = attribute;
 		}
 		attr = attribute;
-
-		writeport(CRTC, 0x0e, 0x00);
-		writeport(CRTC, 0x0f, 0x00);
 	}
 }
 
