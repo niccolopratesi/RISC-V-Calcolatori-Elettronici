@@ -255,16 +255,21 @@ void kbd_setup(PCI_config *conf)
   // TENTATIVO DI LETTURA DI UN DATO
   // creazione e passaggio alla periferica del buffer
   flog(LOG_INFO, "creo il buffer per ricevere un dato");
-  virtio_input_event b;
+  virtio_input_event b1, b2;
   virtq_desc *d = &eventq.desc[0];
-  d->addr = (natq) &b;
-  d->len = sizeof(b);
+  d->addr = (natq) &b1;
+  d->len = sizeof(b1);
   d->flags = VIRTQ_DESC_F_WRITE;
   eventq.avail->ring[eventq.avail->idx % QUEUE_SIZE] = 0;
+  d = &eventq.desc[1];
+  d->addr = (natq) &b2;
+  d->len = sizeof(b2);
+  d->flags = VIRTQ_DESC_F_WRITE;
+  eventq.avail->ring[(eventq.avail->idx + 1) % QUEUE_SIZE] = 1;
   asm(".option push");
   asm(".option arch, +zifencei");
   asm("fence.i");
-  eventq.avail->idx += 1;
+  eventq.avail->idx += 2;
   asm("fence.i");
   asm(".option pop");
   if (eventq.used->flags == 0) {
