@@ -30,7 +30,8 @@
 // numero massimo interruzione
 #define MAX_IRQ         32
 
-
+//indirizzo inizio VIRT_TEST
+#define VIRT_TEST       0x100000L
 //indirizzo inizio PLIC
 #define PLIC            0x0c000000L
 //dimensione spazio riservato al PLIC
@@ -54,17 +55,17 @@
 
 
 // indirizzo dal quale e' montato il kernel
-#define KERNBASE           0x80000000L
+#define KERNBASE           0x80000000UL
 // indirizzo in cui è caricato il descrittore del modulo utente
 // caricato di default a metà della memoria fisica
 #ifdef UBUNTU
-    #define USER_MOD_START 0x84000000L
+    #define USER_MOD_START 0x84000000UL
 #else
-    #define USER_MOD_START 0x83fff000L
+    #define USER_MOD_START 0x83fff000UL
 #endif
 // indirizzo da cui sono caricati i descrittori del modulo io e utente
 // caricato di default a 0x84000000L o 0x83fff000L(ubuntu)
-#define MOD_START       0x83fff000L
+#define MOD_START       0x83fff000UL
 // )
 
 
@@ -149,5 +150,10 @@
 #define SSTATUS_UPIE     (1L << 4)   
 #define SSTATUS_SIE      (1L << 1)  
 #define SSTATUS_UIE      (1L << 0) 
+
+// Costanti per il reset
+#define FINISHER_FAIL    0x3333
+#define FINISHER_PASS    0x5555
+#define FINISHER_RESET   0x7777
 
 #endif
