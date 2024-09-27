@@ -3,8 +3,6 @@
 
 #include <tipo.h>
 
-/* parte relativa alle virtqueue (ufficiale) */
-
 #define VIRTQ_DESC_F_NEXT      1
 #define VIRTQ_DESC_F_WRITE     2
 #define VIRTQ_DESC_F_INDIRECT  4
@@ -49,8 +47,6 @@ struct virtq {
   struct virtq_avail *avail;
   struct virtq_used *used;
 };
-
-/* ulteriori definizioni (non ufficiali) */
 
 struct virtio_pci_cap {
   natb cap_vndr;
@@ -119,7 +115,10 @@ struct virtio_pci_notify_cap {
 #define VIRTIO_F_VERSION_1      32
 #define VIRTIO_F_RING_RESET     40
 
-bool crea_virtq(virtq &queue, natw queue_size, natw avail_flags);
-void assign_virtq(virtq queue, virtio_pci_common_cfg *comm_cfg);
+bool create_virtq(virtq &queue, natw queue_size, natw avail_flags);
+bool enable_virtq(virtio_pci_common_cfg &common_cfg, natw queue_select, natw queue_size,
+                  natw queue_msix_vector, virtq queue);
+void add_buf_desc(virtq &queue, natw index, natq addr, natl len, natw flags, natw next);
+void memory_barrier();
 
 #endif /* VIRTIO_H */
