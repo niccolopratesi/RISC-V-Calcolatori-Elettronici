@@ -1,3 +1,6 @@
+#ifndef PCI_H
+#define PCI_H
+
 namespace pci {
 
 	const ioaddr CAP = 0x0CF8;
@@ -38,6 +41,9 @@ struct PCI_config {
   natb max_latency;
 };
 
+#define VIRT_IMSIC_M 0x24000000
+#define VIRT_IMSIC_S 0x28000000
+
 struct MSIX_capability {
   natb id;
   natb next_pointer;
@@ -62,3 +68,6 @@ struct capability_elem {
   natb next_pointer;
 };
 
+bool msix_add_entry(MSIX_entry *table, int index, paddr addr, natl data);
+
+#endif /* PCI_H */

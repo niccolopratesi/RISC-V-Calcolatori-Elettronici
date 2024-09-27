@@ -77,8 +77,8 @@ extern "C" int boot_main(){
 
 	flog(LOG_INFO, "Running in S-Mode");
 
-	// pci_init();
-	// flog(LOG_INFO, "PCI initialized");
+	pci_init();
+	flog(LOG_INFO, "PCI initialized");
 
 	plic_init();
 	flog(LOG_INFO, "PLIC Initialized");
@@ -106,7 +106,7 @@ extern "C" int boot_main(){
 
 	// Successo!
 	//printf("\nPaging enabled. Hi from Virtual Memory!\n\r");
-    flog(LOG_INFO, "Attivata paginazione");
+  flog(LOG_INFO, "Attivata paginazione");
 
 	// anche se il primo processo non è completamente inizializzato,
 	// gli diamo un identificatore, in modo che compaia nei log
@@ -129,9 +129,6 @@ extern "C" int boot_main(){
 	flog(LOG_INFO, "- io /cond [%p, %p)", ini_mio_c, fin_mio_c);
 	flog(LOG_INFO, "- usr/cond [%p, %p)", ini_utn_c, fin_utn_c);
 	flog(LOG_INFO, "- usr/priv [%p, %p)", ini_utn_p, fin_utn_p);
-
-	pci_init();
-	flog(LOG_INFO, "PCI initialized");
 
 	// Le parti sis/priv e usr/priv verranno create da crea_processo() ogni
 	// volta che si attiva un nuovo processo.  La parte sis/cond contiene

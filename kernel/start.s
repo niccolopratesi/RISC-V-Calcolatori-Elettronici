@@ -30,18 +30,18 @@ start:
 
   # Enable MSI (PCI) interrupts
   li t0, 0x70   # EIDELIVERY
-  csrw miselect, t0
+  csrw siselect, t0
   li t1, 1
-  csrw mireg, t1
+  csrw sireg, t1
   li t0, 0x72   # EITHRESHOLD
-  csrw miselect, t0
+  csrw siselect, t0
   li t1, 5
-  csrw mireg, t1
+  csrw sireg, t1
   # Keyboard specific
   li t0, 0xC0   # EI0
-  csrw miselect, t0
+  csrw siselect, t0
   li t1, 0b10
-  csrw mireg, t1
+  csrw sireg, t1
 
   # Init memory ###
 

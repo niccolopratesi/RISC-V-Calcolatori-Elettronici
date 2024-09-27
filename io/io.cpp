@@ -3,6 +3,7 @@
 #include "sys.h"
 #include "sysio.h"
 #include "io.h"
+#include "kbd.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // @defgroup ioheap Memoria Dinamica
@@ -72,7 +73,7 @@ void operator delete(void* p)
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Descrittore della Console
-struct des_console{
+struct des_console {
     /// semaforo di mutua esclusione per l'accesso alla console
     natl mutex;
     /// semaforo di sincronizzazione per le letture da tastiera
@@ -88,41 +89,180 @@ struct des_console{
 // Unica istanza di des_console
 des_console console;
 
+/*! @brief Parte C++ della primitiva writeconsole()
+ *  @param buff buffer da cui leggere i caratteri
+ *  @param quanti numero di caratteri da scrivere
+ */
+extern "C" void c_writeconsole(const char* buff, natq quanti)
+{
+    des_console *p_des = &console;
+
+    if (!access(buff,quanti,false,false)) {
+        flog(LOG_WARN,"writeconsole: parametri non validi: %p, %lu:", buff, quanti);
+        abort_p();
+    }
+
+    sem_wait(p_des->mutex);
+#ifndef AUTOCORR
+    for (natq i = 0; i < quanti; i++) {
+        // vid::char_write(buff[i]);  print vga fa la stessa cosa
+        flog(LOG_INFO, "%c", buff[i]);
+    }
+#else /*AUTOCORR*/
+    if (quanti > 0 && buff[quanti - 1] == '\n')
+        quanti--;
+    if (quanti > 0)
+        flog(LOG_USR, "%.*s", static_cast<int>(quanti), buff);
+#endif /*AUTOCORR*/
+
+    sem_signal(p_des->mutex);
+}
+
+/*! @brief Avvua una operazione di lettura dalla tastiera
+ *  @param d    descrittore della console
+ *  @param buff buffer che deve ricevere i caratteri
+ *  @param dim  dimensione di _buff_
+ */
+void startkbd_in(des_console *d, char *buff, natq dim)
+{
+    d->punt = buff;
+    d->cont = dim;
+    d->dim = dim;
+    kbd::enable_intr();
+}
+
+/*! @brief Parte C++ della primitiva readconsole()
+ *  @param buff buffer che deve ricevere i caratteri letti
+ *  @param quanti dimensione di _buff_
+ *  @return numero di caratteri effettivamente letti
+ */
+extern "C" natq c_readconsole(char* buff, natq quanti)
+{
+    des_console *d = &console;
+    natq rv;
+
+    if (!access(buff, quanti, true)) {
+        flog(LOG_WARN, "readconsole: parametri non validi: %p, %lu:", buff, quanti);
+        abort_p();
+    }
+
+#ifdef AUTOCORR
+    return 0;
+#endif
+
+    if (!quanti)
+        return 0;
+
+    sem_wait(d->mutex);
+    startkbd_in(d, buff, quanti);
+    sem_wait(d->sincr);
+    rv = d->dim - d->cont;
+    sem_signal(d->mutex);
+    return rv;
+}
+
+/// @brief Processo esterno associato alla tastiera
+void estern_kbd(int)
+{
+  des_console *d = &console;
+  char a;
+  bool fine;
+
+  for (;;) {
+    kbd::disable_intr();
+
+    while (kbd::more_to_read()) {
+      a = kbd::char_read_intr();
+
+      fine = false;
+      switch (a) {
+      case 0:
+        break;
+      case '\b':
+        if (d->cont < d->dim) {
+          d->punt--;
+          d->cont++;
+          // vid::str_write("\b \b");
+        }
+        break;
+      case '\r':
+      case '\n':
+        fine = true;
+        *d->punt = '\0';
+        // vid::str_write("\r\n");
+        break;
+      default:
+        *d->punt = a;
+        d->punt++;
+        d->cont--;
+        // vid::char_write(a);
+        if (d->cont == 0)
+          fine = true;
+        break;
+      }
+    }
+    kbd::add_max_buf();
+    if (fine)
+      sem_signal(d->sincr);
+    else
+      kbd::enable_intr();
+    wfi();
+  }
+}
+
 /*! @brief Parte C++ della primitiva iniconsole()
  *  @param cc Attributo colore per il video
  */
-
-extern "C" void c_iniconsole(natb cc){
-
+extern "C" void c_iniconsole(natb cc)
+{
+    // vid::clear(cc);
 }
+
+/// 
+const int INTR_TIPO_KBD = 2;
+const int KBD_IRQ = 1;
 
 /*! @brief Inizializza la tastiera
  *  @return true in caso di successo, false altrimenti
  */
+bool kbd_init()
+{
+    // inizializzazione delle strutture dati della tastiera
+    // le interruzioni sono disabilitate al suo interno
+    if (!kbd::init()) {
+      flog(LOG_ERR, "kbd: impossibile configurare la tastiera");
+      return false;
+    }
 
-bool kbd_init(){
+    // prepariamo la virtqueue per ricevere i dati
+    kbd::add_max_buf();
 
-
-
+    // momentaneamente solo per test
+    kbd::enable_intr();
+    
+    if (activate_pe(estern_kbd, 0, MIN_EXT_PRIO + INTR_TIPO_KBD, LIV_SISTEMA, KBD_IRQ) == 0xFFFFFFFF) {
+        flog(LOG_ERR, "kbd: imposssibile creare estern_kbd");
+        return false;
+    }
+    flog(LOG_INFO, "kbd: tastiera inizializzata");
     return true;
 }
 
 /*! @brief Inizializza il video (modalità testo)
  *  @return true in caso di successo, false altrimenti
  */
-
-bool vid_init(){
-
+bool vid_init()
+{
     //clear_screen(0x00,0x0F);
-
+    flog(LOG_INFO, "vid: video inizializzato");
     return true;
 }
 
 /*! @brief Inizializza la console (tastiera + video)
  *  @return true in caso di successo, false altrimenti
  */
-
-bool console_init(){
+bool console_init()
+{
     des_console* d = &console;
 
     if((d->mutex = sem_ini(1)) == 0xFFFFFFFF){
@@ -134,52 +274,8 @@ bool console_init(){
         flog(LOG_ERR,"console: impossibile creare sincr");
         return false;
     }
-
     return kbd_init() && vid_init();
 }
-
-
-/*! @brief Parte C++ della primitiva readconsole()
- *  @param buff buffer che deve ricevere i caratteri letti
- *  @param quanti dimensione di _buff_
- *  @return numero di caratteri effettivamente letti
- */
-
-extern "C" natq c_readconsole(char* buff, natq quanti){
-
-
-    return 0;
-}
-
-
-/*! @brief Parte C++ della primitiva writeconsole()
- *  @param buff buffer da cui leggere i caratteri
- *  @param quanti numero di caratteri da scrivere
- */
-
- extern "C" void c_writeconsole(const char* buff, natq quanti){
-    des_console *p_des = &console;
-
-    if(!access(buff,quanti,false,false)){
-        flog(LOG_WARN,"writeconsole: parametri non validi: %p, %lu:",buff,quanti);
-        abort_p();
-    }
-
-    sem_wait(p_des->mutex);
-    #ifndef AUTOCORR
-        for(natq i = 0;i < quanti;i++){
-            //vid::char_write(buff[i]);  print vga fa la stessa cosa
-        }
-    #else /*AUTOCORR*/
-        if(quanti > 0 && buff[[quanti-1]] == '\n')
-            quanti--;
-        if(quanti > 0)
-            flog(LOG_USR, "%.*s",static_cast<int>(quanti),buff);
-    #endif /*AUTOCORR*/
-
-    sem_signal(p_des->mutex);
- }
-
 
 /// @}
 
@@ -192,8 +288,8 @@ extern "C" natq c_readconsole(char* buff, natq quanti){
 /*! @brief segnala un errore fatale nel modulo I/O
  *  @param msg messaggio da inviare al log (severità LOG_ERR)
  */
-
-extern "C" void panic(const char* msg){
+extern "C" void panic(const char* msg)
+{
     flog(LOG_ERR,"modulo I/O: %s",msg);
     io_panic();
 }
@@ -214,8 +310,8 @@ extern "C" void panic(const char* msg){
  *
  *  @param sem_io indice del semaforo di sincronizzazione
  */
-extern "C" void main(natq sem_io) {
-
+extern "C" void main(natq sem_io)
+{
     //inizializzazione semaforo mutua esclusione per heap
     ioheap_mutex = sem_ini(1);
     if(ioheap_mutex == 0xFFFFFFFF){
@@ -225,7 +321,7 @@ extern "C" void main(natq sem_io) {
     natb* end_ = allinea(end,DIM_PAGINA);
     //inizializzazione heap modulo I/O
     heap_init(allinea_ptr(end_, DIM_PAGINA), DIM_IO_HEAP);
-	flog(LOG_INFO, "Heap del modulo I/O: %lx [%p, %p)", DIM_IO_HEAP,
+	  flog(LOG_INFO, "Heap del modulo I/O: %lx [%p, %p)", DIM_IO_HEAP,
 			end_, end_ + DIM_IO_HEAP);
 
     //inizializzazione periferiche
