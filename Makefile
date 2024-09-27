@@ -79,18 +79,17 @@ LDFLAGS = 		\
 
 LDLIBS = -lce
 
-RUNFLAGS = -machine virt
+RUNFLAGS = -machine virt,aia=aplic-imsic
 RUNFLAGS += -bios none
 RUNFLAGS += -gdb tcp::1234
 RUNFLAGS += -m 128M
 RUNFLAGS += -device VGA
 RUNFLAGS += -device virtio-keyboard
-# RUNFLAGS += -device virtio-input-host-pci,evdev=/dev/input/by-path/platform-i8042-serio-0-event-kbd
 RUNFLAGS += -serial stdio
 RUNFLAGS += -smp 1
 
 
-DEBUGFLAGS = -machine virt
+DEBUGFLAGS = -machine virt,aia=aplic-imsic
 DEBUGFLAGS += -bios none
 DEBUGFLAGS += -gdb tcp::1234
 DEBUGFLAGS += -m 128M

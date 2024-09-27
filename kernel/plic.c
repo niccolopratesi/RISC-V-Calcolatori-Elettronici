@@ -5,11 +5,11 @@
 
 void plic_init() {
     // Set desired IRQ priorities non-zero (otherwise disabled)
-    *(natl*)(PLIC + UART0_IRQ*4) = 1;
+    // *(natl*)(PLIC + UART0_IRQ*4) = 1;
 
-    *(natl*)PLIC_ENABLE = (1 << UART0_IRQ);
+    // *(natl*)PLIC_ENABLE = (1 << UART0_IRQ);
 
-    *(natl*)PLIC_THRESHOLD = 0;
+    // *(natl*)PLIC_THRESHOLD = 0;
 }
 
 int plic_claim() {

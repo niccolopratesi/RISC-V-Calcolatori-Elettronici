@@ -13,10 +13,10 @@ start:
 
   # delegate all interrupts and exceptions to supervisor mode
   li t0, 0xffffffffffffffff
-  # csrw medeleg, t0
-  # csrw mideleg, t0
+  csrw medeleg, t0
+  csrw mideleg, t0
 
-  # set machine_handler as Machine interrupt handler
+  # set machine_interrupts as Machine interrupt handler
   la t0, machine_interrupts
   csrw mtvec, t0
 
@@ -27,6 +27,21 @@ start:
   # Set k_trap as Supervisor interrupt handler
   la t0, k_trap
   csrw stvec, t0
+
+  # Enable MSI (PCI) interrupts
+  li t0, 0x70   # EIDELIVERY
+  csrw miselect, t0
+  li t1, 1
+  csrw mireg, t1
+  li t0, 0x72   # EITHRESHOLD
+  csrw miselect, t0
+  li t1, 5
+  csrw mireg, t1
+  # Keyboard specific
+  li t0, 0xC0   # EI0
+  csrw miselect, t0
+  li t1, 0b10
+  csrw mireg, t1
 
   # Init memory ###
 
@@ -42,7 +57,7 @@ start:
   li t0, 0x40000
   csrs sstatus, t0
 
-  # Init timer #####
+  # Init timer ###
   
   # Enable Sstc extension
   li t0, 0x8000000000000000
