@@ -254,7 +254,7 @@ bool kbd_init()
  */
 bool vid_init()
 {
-    vid::clear_screen(vid::attr);
+    // vid::clear_screen(vid::attr);
     flog(LOG_INFO, "vid: video inizializzato");
     return true;
 }
