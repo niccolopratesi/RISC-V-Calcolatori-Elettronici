@@ -169,13 +169,16 @@ $B/moduli.strip: $B/io.strip $B/user.strip
 
 compile: $B/kernel $B/user.strip $B/io.strip
 
-run: $B/kernel $B/moduli.strip
+run: build $B/kernel $B/moduli.strip
 	$(RUN) -kernel $B/kernel -initrd $B/moduli.strip
 
 debug: $B/kernel $B/moduli.strip
 	$(DEBUG) -kernel $B/kernel -initrd $B/moduli.strip
 
 libce: $B/libce.a
+
+build:
+	mkdir -p $@
 
 #keeps make from doing something with a file named clean
 .PHONY: clean
