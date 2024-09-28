@@ -24,8 +24,8 @@ start:
   li t0, 0b1000100010
   csrs sie, t0
 
-  # Set k_trap as Supervisor interrupt handler
-  la t0, k_trap
+  # Set supervisor_interrupts as Supervisor interrupt handler
+  la t0, supervisor_interrupts
   csrw stvec, t0
 
   # Enable MSI (PCI) interrupts

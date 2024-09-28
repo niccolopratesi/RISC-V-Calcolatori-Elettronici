@@ -1,11 +1,11 @@
-.global kInterruptHandler
-.global k_trap
-k_trap:
+.global supervisor_handler 
+.global supervisor_interrupts
+supervisor_interrupts:
     addi sp,sp,-8
     sd ra,0(sp)
     call salva_stato
 
-    call kInterruptHandler
+    call supervisor_handler 
 
     call carica_stato
 

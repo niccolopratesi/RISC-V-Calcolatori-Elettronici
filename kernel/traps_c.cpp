@@ -59,64 +59,73 @@ int dev_int() {
     return 0;
 }
 
-/// Legge il numero della syscall in a7 e chiama la funzione corrispondente
-void syscall(void) {
-  natq num;
+bool syscall_supervisor(void)
+{
   des_proc *p = esecuzione;
 
-  num = p->contesto[I_A7];
+  switch (p->contesto[I_A7]) {
+  case TIPO_WFI:
+    plic_complete(p->contesto[I_A0]);
+    schedulatore();
+    break;
+  case TIPO_TRA :
+    c_trasforma(p->contesto[I_A0]);
+    break;
+  case TIPO_ACC :
+    c_access(p->contesto[I_A0], p->contesto[I_A1], p->contesto[I_A2], p->contesto[I_A3]);
+    break;
+   case TIPO_APE :
+    c_activate_pe((void(*)(natq))p->contesto[I_A0], p->contesto[I_A1], p->contesto[I_A2], p->contesto[I_A3],p->contesto[I_A4]);
+    break;
+  case TIPO_AB :
+    c_abort_p(p->contesto[I_A0]);
+    break;
+  default:
+    return false;
+  }
 
-  switch (num)
-  {
-    case TIPO_A:
-        c_activate_p((void(*)(natq))p->contesto[I_A0], p->contesto[I_A1], p->contesto[I_A2], p->contesto[I_A3]);
-        break;
-    case TIPO_T:
-        c_terminate_p();
-        break;
-    case TIPO_SI:
-        c_sem_ini(p->contesto[I_A0]);
-        break;
-    case TIPO_W:
-        c_sem_wait(p->contesto[I_A0]);
-        break;
-    case TIPO_S:
-        c_sem_signal(p->contesto[I_A0]);
-        break;
-    case TIPO_D:
-        c_delay(p->contesto[I_A0]);
-        break;
-    case TIPO_L:
-        c_do_log((log_sev)p->contesto[I_A0], (const char*)p->contesto[I_A1], p->contesto[I_A2]);
-        break;
-    case TIPO_WFI:
-        plic_complete(p->contesto[I_A0]);
-        schedulatore();
-        break;
-    case TIPO_TRA :
-        c_trasforma(p->contesto[I_A0]);
-        break;
-    case TIPO_ACC :
-        c_access(p->contesto[I_A0], p->contesto[I_A1], p->contesto[I_A2], p->contesto[I_A3]);
-        break;
-     case TIPO_APE :
-        c_activate_pe((void(*)(natq))p->contesto[I_A0], p->contesto[I_A1], p->contesto[I_A2], p->contesto[I_A3],p->contesto[I_A4]);
-        break;
-    case TIPO_AB :
-        c_abort_p(p->contesto[I_A0]);
-        break;
-    // case TIPO_GMI:
-    //     c_getmeminfo();
-    //     break;
-    default:    
-        flog(LOG_WARN, "unknown sys call %d\n", num);
-        p->contesto[I_A0] = -1;
-        break;
+  return true;
+}
+
+/// Legge il numero della syscall in a7 e chiama la funzione corrispondente
+void syscall_user(void) {
+  des_proc *p = esecuzione;
+
+  switch (p->contesto[I_A7]) {
+  case TIPO_A:
+    c_activate_p((void(*)(natq))p->contesto[I_A0], p->contesto[I_A1], p->contesto[I_A2], p->contesto[I_A3]);
+    break;
+  case TIPO_T:
+    c_terminate_p();
+    break;
+  case TIPO_SI:
+    c_sem_ini(p->contesto[I_A0]);
+    break;
+  case TIPO_W:
+    c_sem_wait(p->contesto[I_A0]);
+    break;
+  case TIPO_S:
+    c_sem_signal(p->contesto[I_A0]);
+    break;
+  case TIPO_D:
+    c_delay(p->contesto[I_A0]);
+    break;
+  case TIPO_L:
+    c_do_log((log_sev)p->contesto[I_A0], (const char*)p->contesto[I_A1], p->contesto[I_A2]);
+    break;
+// case TIPO_GMI:
+//     c_getmeminfo();
+//     break;
+  default:    
+    flog(LOG_WARN, "unknown sys call %d\n", p->contesto[I_A7]);
+    p->contesto[I_A0] = -1;
+    break;
   }
 }
 
 // Parte C++ del gestore delle interruzioni in modalità supervisor
-extern "C" void kInterruptHandler(){
+extern "C" void supervisor_handler()
+{
     natq epc = readSEPC();
     natq status = readSSTATUS();
     natq cause = readSCAUSE();
@@ -124,11 +133,16 @@ extern "C" void kInterruptHandler(){
     if ((status & SSTATUS_SIE) != 0)
         fpanic("trap: interrupts enabled");
 
+    if (cause == 9 && syscall_supervisor()) {
+        esecuzione->epc += 4;
+        return;
+    }
+
     // ecall da u-mode (8) o s-mode (9)
     if (cause == 8 || cause == 9) {
         // Salviamo l'indirizzo dell'istruzione successiva, a cui si deve tornare
         esecuzione->epc += 4;
-        syscall();
+        syscall_user();
         return;
     }
 
