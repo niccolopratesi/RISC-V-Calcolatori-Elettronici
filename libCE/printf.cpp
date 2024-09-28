@@ -1,4 +1,7 @@
 #include "internal.h"
+#include "vid.h"
+using namespace vid;
+
 int printf(const char *fmt, ...)
 {
         va_list ap;

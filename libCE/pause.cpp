@@ -1,5 +1,7 @@
 #include "internal.h"
 #include "kbd.h"
+#include "vid.h"
+using namespace vid;
 
 // attende che venga premuto un tato carattere
 void pause()

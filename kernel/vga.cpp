@@ -35,7 +35,8 @@
 #include "palette.h"
 #include "costanti.h"
 #include "libce.h"
-
+#include "vid.h"
+using namespace vid;
 /*
 //standard vga ports
 #define AC 0x3c0            //attribute or palette registers                       
@@ -50,24 +51,21 @@
 #define INPUT_STATUS_REGISTER 0x3da
 */
 
-#define VGA_TEXT_HEIGHT 25
-#define VGA_TEXT_WIDTH  80
-
 //remapped VGA ports into qemu
-#define AC                    0x400           //attribute or palette registers              
-#define AC_READ               0x401           //attribute read register                     
-#define MISC                  0x402           //miscellaneous register                        
-#define MISC_READ             0x40c           //miscellaneous read register                 
-#define SEQ                   0x404           //sequencer                                     
-#define GC                    0x40e           //graphic address register                      
-#define CRTC                  0x414           //cathode ray tube controller address register  
-#define PC                    0x408           //PEL write index                               
-#define PD                    0x409           //PEL write data                              
-#define INPUT_STATUS_REGISTER 0x41a
+// #define AC                    0x400           //attribute or palette registers              
+// #define AC_READ               0x401           //attribute read register                     
+// #define MISC                  0x402           //miscellaneous register                        
+// #define MISC_READ             0x40c           //miscellaneous read register                 
+// #define SEQ                   0x404           //sequencer                                     
+// #define GC                    0x40e           //graphic address register                      
+// #define CRTC                  0x414           //cathode ray tube controller address register  
+// #define PC                    0x408           //PEL write index                               
+// #define PD                    0x409           //PEL write data                              
+// #define INPUT_STATUS_REGISTER 0x41a
 
 
-natb readport(natl port, natb index);
-void writeport(natl port, natb index, natb val);
+//natb readport(natl port, natb index);
+//void writeport(natl port, natb index, natb val);
 
 void init_textmode_80x25();
 void init_graphicmode_320x200();
@@ -80,95 +78,85 @@ void init_PD();
 void load_font(unsigned char* font_16);
 void load_palette();
 void post_font();
-void print_VGA(char *message, natb fg, natb bg);
-void clear_screen(natb fg, natb bg);
+// void print_VGA(char *message, natb attr);
+// void clear_screen(natb attr);
+// void scroll();
 
 // write to this to discard data
 volatile natb __attribute__((unused)) discard; 
+
 // vga framebuffer
-char *vga_buf;
+char *vga_buf = (char *)(VGA_FRAMEBUFFER);
 
 //memory mapped IO ports base
-static volatile natb *const VGA_BASE = (natb *)VGA_MMIO_PORTS;
+//volatile natb *const VGA_BASE = (natb *)VGA_MMIO_PORTS;
 
 static inline natw encode_char(char c, natb fg, natb bg) {
   return ((bg & 0xf) << 4 | (fg & 0xf)) << 8 | c;
 }
-
-
-// static inline void memcpy(void *dest, const void *src,natl n){
-//   unsigned char *d = (unsigned char *)dest;
-//   const unsigned char *s = (unsigned char *)src;
-
-//   for (natl i = 0; i < n; i++) {
-//     *(d + i) = *(s + i);
-//   }
-// }
 
 extern "C" void vga_init() {
 
   init_textmode_80x25();
 
   //scritture a 0xa0000 colorano la cella del carattere
-  volatile natb *p = (natb *)(VGA_FRAMEBUFFER);
-  p[0] = 0x40;
-  p[1] = 0x0f;
+  //volatile natb *p = (natb *)(VGA_FRAMEBUFFER);
 
-  p[6] = 0x20;
-  p[5] = 0x40;
-
-  p[8] = 0x03;
-  p[9] = 0x0f;
-
-//cella 80 riga 1
-  p[316] = 0x05;
-  p[317] = 0x0f;
-
-//   for(int i=4;i<300;i+=2){
-//     if(i==8){
-// p[i] = 0x30;
-//     p[i+1] = 0x40; 
-//     }else{
-// p[i] = 0x30;
-//     p[i+1] = 0x0f; 
-//     }
-     //background rosso
-//}
-
-  // //scritture a 0xb8000 vengono ignorate, perché?
-  // p = (natb *)(VGA_FRAMEBUFFER+0x18000);
-  // p[0] = 0x00;
-  // p[1] = 0x0f;
-  // for(int i=2;i<300*200;i+=2){
-  //   p[i] = 0x10;
-  //   p[i+1] = 0x0f;
+  //test font
+  // int j=0;
+  // for(int i=0;i<2000;i++){
+  //   p[4*i]=j;
+  //   p[4*i+1]=0x0f;
+  //   j++;
   // }
+  //test clear
+  vid::clear_screen(0x0f);
 
-  //0x0F = bright white on black background
-  //clear_screen(0x00,0x0F);
+  //test print
+  // print_VGA("Hello RISC-V world!", 0x0f);
+  // print_VGA("This is a very very very long text, really really really long, to try it out", 0x0f);
+  // print_VGA("\nLet's go on a new line", 0x0f);
+  vid::str_write("Hello RISC-V world!");
+  vid::str_write("This is a very very very long text, really really really long, to try it out");
+  vid::str_write("\nLet's go on a new line");
 
-  //print_VGA("Hello RISC-V world!\n", 0x02, 0x00);
-
+  //test scroll
+  //vid::scroll();
 
 
   // //modalità grafica
   // init_graphicmode_320x200();
 
+  // for(int i = 0; i<200; i++){
+  //   for(int j = 0; j<320; j++){
+  //     if(((i >= 10 && i < 15) || (i > 85 && i <= 90)|| (i >= 110 && i < 115) || (i > 185 && i <= 190)) && (j > 129 && j < 190)){
+  //       vga_buf[i*320+j] = 0xfa;
+  //     }else if((i > 147 && i < 153) && (j > 130 && j < 170)){
+  //       vga_buf[i*320+j] = 0xfa;
+  //     }else if(((i>=10 && i<=90) || (i>=110 && i<=190)) && (j > 127 && j < 133)){
+  //       vga_buf[i*320+j] = 0xfa;
+  //     }else if(j > 99 && j < 220){
+  //       vga_buf[i*320+j] = 0xfb;
+  //     }else{
+  //       vga_buf[i*320+j] = 0xfa;
+  //     }
+  //   }
+  // }
+
+  // for(int i = 0; i < 200; i++){
+  //   for(int j = 0; j < 320; j++){
+  //     if(((j>88 && j<=99) || (j>=220 && j<231)) && i!=0 && i%40==0){
+  //       for(int k = -10; k < 11; k++){
+  //         vga_buf[(i+k)*320+j] = 0xf9;
+  //       }
+  //     }
+  //   }
+  // }
+
   // //test graphic mode
-  // //metà schermo rosso e metà schermo verde
-  // //sia verticalmente che orizzontalmente
-
-  // for(int i=0; i < 320*100;i++){
-  //   p[i] = 0xfe;
-  // }
-  // for(int i=320*100; i < 320*200;i++){
-  //   p[i] = 0xfd;
-  // }
-
-
   // for(int i=0; i < 200;i++){
   //   for(int j=0; j < 320;j++){
-  //     if(j<1 || j==2 || j==319){
+  //     if(j<5 || j>314 || j== 159 || j==160){
 
   //       p[i*320 + j] = 0xfd;
   //     }else{
@@ -180,101 +168,127 @@ extern "C" void vga_init() {
   flog(LOG_INFO,"VGA inizializzata");
 }
 
-void clear_screen(natb bg, natb fg){
-  volatile natb *p = (natb *)(VGA_FRAMEBUFFER | (0xb8000 - 0xa0000));// 0xb8000
+// void clear_screen(natb attr){
+//   volatile natb *p = (natb *) VGA_FRAMEBUFFER;
 
-  fg &= 0xf;
+//   for(int i=0;i<VGA_TEXT_WIDTH*VGA_TEXT_HEIGHT*4;i+=4){
+//     p[i] = ' ';
+//     p[i+1] = attr;
+//   }
+// }
 
-  natb attribute = (bg << 4) | fg;
+// void scroll(){
+//   natb work = 0x0f;
+//   volatile natb *p = (natb *) VGA_FRAMEBUFFER;
+//   for(unsigned int i = 0; i < VGA_TEXT_WIDTH*VGA_TEXT_HEIGHT*4 - 80*4; i+=4){
+//     p[i] = p[i+80*4];
+//     p[i+1] = p[i+80*4+1];
+//   }
+//   for(unsigned int i = 0; i < 80*4; i+=4){
+//     p[VGA_TEXT_WIDTH*VGA_TEXT_HEIGHT*4 - 80*4 + i] = ' ';
+//     p[VGA_TEXT_WIDTH*VGA_TEXT_HEIGHT*4 - 80*4 + i + 1] = work;
+//   }
 
-  for(int i=0;i<VGA_TEXT_WIDTH*VGA_TEXT_HEIGHT;i+=2){
-    p[i] = ' ';
-    p[i+1] = attribute;
-  }
-}
+//   int cursor = readport(CRTC, 0x0f);
+//   //posizione del cursore
+//   cursor = (cursor+1)*2 -2;
+//   if(cursor < VGA_TEXT_WIDTH*2){
+//     //se siamo nella prima riga, il cursore viene posto in cima alla riga
+//     writeport(CRTC, 0x0e, 0x00);
+//     writeport(CRTC, 0x0f, 0x00);
+//     return;
+//   }
+    
+//   //tolgo una riga al cursore
+//   cursor = cursor - VGA_TEXT_WIDTH*2 + 2;
+  
+//   //nuova posizione del cursore
+//   writeport(CRTC, 0x0e, (cursor/2 -1) >> 8);
+//   writeport(CRTC, 0x0f, (cursor/2 -1) & 0xff);
+// }
 
-natb readport(natl port, natb index) {
-  natb read;
+// natb readport(natl port, natb index) {
+//   natb read;
 
-  switch (port) {
-    case AC:
-      //reset to index mode
-      discard = VGA_BASE[INPUT_STATUS_REGISTER];
-      VGA_BASE[AC] = index;
-      read = VGA_BASE[AC_READ];
-      break;
-    case MISC:
-      read = VGA_BASE[MISC_READ];
-      break;
-    case SEQ:
-      VGA_BASE[port] = index;
-      read = VGA_BASE[port + 1];
-      break;
-    case GC:
-      VGA_BASE[port] = index;
-      read = VGA_BASE[port + 1];
-      break;
-    case CRTC:
-      VGA_BASE[port] = index;
-      read = VGA_BASE[port + 1];
-      break;
-    case PD:
-      read = VGA_BASE[PD];
-      break;
-    default:
-      read = 0xff;
-      break;
-  }
-  discard = VGA_BASE[INPUT_STATUS_REGISTER];
-  return read;
-}
+//   switch (port) {
+//     case AC:
+//       //reset to index mode
+//       discard = VGA_BASE[INPUT_STATUS_REGISTER];
+//       VGA_BASE[AC] = index;
+//       read = VGA_BASE[AC_READ];
+//       break;
+//     case MISC:
+//       read = VGA_BASE[MISC_READ];
+//       break;
+//     case SEQ:
+//       VGA_BASE[port] = index;
+//       read = VGA_BASE[port + 1];
+//       break;
+//     case GC:
+//       VGA_BASE[port] = index;
+//       read = VGA_BASE[port + 1];
+//       break;
+//     case CRTC:
+//       VGA_BASE[port] = index;
+//       read = VGA_BASE[port + 1];
+//       break;
+//     case PD:
+//       read = VGA_BASE[PD];
+//       break;
+//     default:
+//       read = 0xff;
+//       break;
+//   }
+//   discard = VGA_BASE[INPUT_STATUS_REGISTER];
+//   return read;
+// }
 
-void writeport(natl port, natb index, natb val) {
+// void writeport(natl port, natb index, natb val) {
 
-  switch (port) {
-    case AC:
-      //reset AC to index mode
-      discard = VGA_BASE[INPUT_STATUS_REGISTER];
-      //attribute register riceve prima l'indirizzo del registro da indicizzare 
-      //e poi il dato da trasferire
-      VGA_BASE[AC] = index;
-      VGA_BASE[AC] = val;
-      break;
-    case MISC:
-      //miscellaneous output register
-      //essendo un external register non ha bisogno di essere indicizzato
-      VGA_BASE[MISC] = val;
-      break;
-    //-- POSSIBILE OTTIMIZZARE IN CASCATA SEQ GC CRTC --
-    case SEQ:
-      //sequencer register riceve prima l'indice nell'address register
-      //poi scrive il dato nel data register (1 byte successivo)
-      VGA_BASE[port] = index;
-      VGA_BASE[port + 1] = val;
-      break;
-    case GC:
-      //graphics register riceve prima l'indice nell'address register
-      //poi scrive il dato nel data register (1 byte successivo)
-      VGA_BASE[port] = index;
-      VGA_BASE[port + 1] = val;
-      break;
-    case CRTC:
-      //cathode ray tube controller register riceve prima l'indice nell'address register
-      //poi scrive il dato nel data register (1 byte successivo)
-      VGA_BASE[port] = index;
-      VGA_BASE[port + 1] = val;
-      break;
-    case PC:
-      //dac register
-      //poiché prima bisogna scrivere l'indice di partenza e poi terne di colori RGB
-      //nel data register, si evita di fare tutto nella stessa write
-      VGA_BASE[port] = index;
-      break;
-    case PD:
-      VGA_BASE[port] = val;
-      break;
-  }
-}
+//   switch (port) {
+//     case AC:
+//       //reset AC to index mode
+//       discard = VGA_BASE[INPUT_STATUS_REGISTER];
+//       //attribute register riceve prima l'indirizzo del registro da indicizzare 
+//       //e poi il dato da trasferire
+//       VGA_BASE[AC] = index;
+//       VGA_BASE[AC] = val;
+//       break;
+//     case MISC:
+//       //miscellaneous output register
+//       //essendo un external register non ha bisogno di essere indicizzato
+//       VGA_BASE[MISC] = val;
+//       break;
+//     //-- POSSIBILE OTTIMIZZARE IN CASCATA SEQ GC CRTC --
+//     case SEQ:
+//       //sequencer register riceve prima l'indice nell'address register
+//       //poi scrive il dato nel data register (1 byte successivo)
+//       // VGA_BASE[port] = index;
+//       // VGA_BASE[port + 1] = val;
+//       // break;
+//     case GC:
+//       //graphics register riceve prima l'indice nell'address register
+//       //poi scrive il dato nel data register (1 byte successivo)
+//       // VGA_BASE[port] = index;
+//       // VGA_BASE[port + 1] = val;
+//       // break;
+//     case CRTC:
+//       //cathode ray tube controller register riceve prima l'indice nell'address register
+//       //poi scrive il dato nel data register (1 byte successivo)
+//       VGA_BASE[port] = index;
+//       VGA_BASE[port + 1] = val;
+//       break;
+//     case PC:
+//       //dac register
+//       //poiché prima bisogna scrivere l'indice di partenza e poi terne di colori RGB
+//       //nel data register, si evita di fare tutto nella stessa write
+//       VGA_BASE[port] = index;
+//       break;
+//     case PD:
+//       VGA_BASE[port] = val;
+//       break;
+//   }
+// }
 
 void init_AC(){
   //PAS bit reset to load color values into internal palette registers
@@ -388,208 +402,18 @@ void init_CRTC(){
 }
 
 void init_PD(){
-
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x0;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x2a;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x15;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-  VGA_BASE[PD] = 0x3f;
-}
-
-void load_font(unsigned char* font_16){
   //color registers
   //start index of DAC entry at 0 
   VGA_BASE[PC] = 0x0;
   //load palette into palette RAM via RGB values
-  init_PD();
+  //init_PD();
+  for(int i = 0; i < 64 * 3; i++){
+    VGA_BASE[PD] = text_palette[i];
+  }
+}
 
+void load_font(unsigned char* font_16){
+  
   //reset index mode
   discard = VGA_BASE[INPUT_STATUS_REGISTER];
   //set bit PAS -> attribute controller a regime, abilita display
@@ -611,8 +435,13 @@ void load_font(unsigned char* font_16){
   writeport(SEQ, 0x02, 0x04);
 
   volatile void *vga_buf = (void *)(VGA_FRAMEBUFFER+0xe000*4+2); // 0xa0000
+  natl padding = 0;
   for (natl i = 0; i < 256; i++) {
-    memcpy((void *)(vga_buf + 32 * i), (void*)(font_16+16 * i), 16);
+    //memcpy((void *)(vga_buf + 32 * i), (void*)(font_16+16 * i), 16);
+    for(natl j = 0; j < 16; j++){
+        memcpy((void *)(vga_buf + 64 * i + 64 * padding + 4 * j), (void*)(font_16+16 * i+j), 1);
+    }
+    padding++;
   }
 
   //rigenera registri
@@ -623,30 +452,38 @@ void load_font(unsigned char* font_16){
   writeport(GC, 0x06, 0x0e);
 }
 
-void print_VGA(char *message, natb fg, natb bg)
-{
-  volatile natb *p = (natb*)(VGA_FRAMEBUFFER | (0xb8000 - 0xa0000));// 0xb8000
-  // posizione attuale del cursore
-  int cursor = readport(CRTC, 0x0f);
-  cursor = (cursor+1)*2 -2; // dove scrivere
-  while(*message){
-    //se dobbiamo andare a capo
-    if(*message !=  0x0a){
-      p[cursor++] = *message;
-      p[cursor++] = (bg<<4) | fg;
-    }
-    else{
-      int line_offset = cursor%(VGA_TEXT_WIDTH*2);
-      cursor = cursor + VGA_TEXT_WIDTH*2 - line_offset;
-    }
-    message++;
-  }
-  p[cursor++] = ' ';
-  p[cursor++] = (bg<<4) | fg;
-  // nuova posizione del cursore
-  writeport(CRTC, 0x0e, (cursor/2 -1) >> 8);
-  writeport(CRTC, 0x0f, (cursor/2 -1) & 0xff);
-}
+// void print_VGA(char *message, natb attr)
+// {
+//   volatile natb *p = (natb*)(VGA_FRAMEBUFFER);
+//   // posizione attuale del cursore
+//   int cursor = readport(CRTC, 0x0f);
+//   cursor = (cursor+1)*2 -2; // dove scrivere
+//   int j;
+//   while(*message){
+//     // il numero della cella è cursor/2 mentre il byte da scrivere è numero della cella * 4
+//     j = cursor/2*4;
+
+//     if(*message ==  '\n'){
+//       int line_offset = cursor % (VGA_TEXT_WIDTH*2);
+//       cursor = cursor + VGA_TEXT_WIDTH*2 - line_offset;
+//     }
+//     else{
+//       p[j] = *message;
+//       p[j+1] = attr;
+//       cursor+=2;
+//     }
+//     message++;
+//   }
+
+//   j = cursor/2*4;
+//   //riposiziono il cursore su uno spazio vuoto
+//   p[j] = 0x00;
+//   p[j+1] = attr;
+//   cursor+=2;
+//   // nuova posizione del cursore
+//   writeport(CRTC, 0x0e, (cursor/2 -1) >> 8);
+//   writeport(CRTC, 0x0f, (cursor/2 -1) & 0xff);
+// }
 
 void init_textmode_80x25(){
 
@@ -656,6 +493,7 @@ void init_textmode_80x25(){
   init_CRTC();
   init_GC();
   init_AC(); 
+  init_PD();
 
   load_font(font_16);
 }
@@ -729,37 +567,18 @@ void init_graphicmode_320x200(){
   writeport(AC, 0x13, 0x00);
   writeport(AC, 0x14, 0x00);
 
-  // Enable display
-  //writeport(AC, 0xff, 0x20);
   //reset index mode
   discard = VGA_BASE[INPUT_STATUS_REGISTER];
   //set bit PAS -> attribute controller a regime
   //abilita lo schermo
   VGA_BASE[AC] = 0x20; 
 
-
   load_palette();
 }
 
 void load_palette(){
-  // configura una VGA palette personalizzata
-  // for (int i = 0; i < 256; i++) {
-  //   std_palette[i] = 0;
-  //   std_palette[i] |= ((i & 0xc0)) << 16;
-  //   std_palette[i] |= ((i & 0x38) << 2) << 8;
-  //   std_palette[i] |= ((i & 0x07) << 5);
-  // }
-  // std_palette[255] = 0xfcfcfc;
-
-
-
   // Set default VGA palette
   writeport(PC, 0xff, 0x00);
-  // for (int i = 0; i < 256; i++) {
-  //   writeport(PD, 0xff, (std_palette[i] & 0xfc0000) >> 18);
-  //   writeport(PD, 0xff, (std_palette[i] & 0x00fc00) >> 10);
-  //   writeport(PD, 0xff, (std_palette[i] & 0x0000fc) >> 2);
-  // }
 
   for (int i = 0; i < 256; i++) {
     writeport(PD, 0xff, (std_palette[i] & 0xff0000) >> 16);

@@ -4,6 +4,7 @@
 #include "sysio.h"
 #include "io.h"
 #include "kbd.h"
+#include "vid.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // @defgroup ioheap Memoria Dinamica
@@ -105,7 +106,7 @@ extern "C" void c_writeconsole(const char* buff, natq quanti)
     sem_wait(p_des->mutex);
 #ifndef AUTOCORR
     for (natq i = 0; i < quanti; i++) {
-        // vid::char_write(buff[i]);  print vga fa la stessa cosa
+        vid::char_write(buff[i]);
         flog(LOG_INFO, "%c", buff[i]);
     }
 #else /*AUTOCORR*/
@@ -182,20 +183,20 @@ void estern_kbd(int)
         if (d->cont < d->dim) {
           d->punt--;
           d->cont++;
-          // vid::str_write("\b \b");
+          vid::str_write("\b \b");
         }
         break;
       case '\r':
       case '\n':
         fine = true;
         *d->punt = '\0';
-        // vid::str_write("\r\n");
+        vid::str_write("\r\n");
         break;
       default:
         *d->punt = a;
         d->punt++;
         d->cont--;
-        // vid::char_write(a);
+        vid::char_write(a);
         if (d->cont == 0)
           fine = true;
         break;
@@ -215,7 +216,7 @@ void estern_kbd(int)
  */
 extern "C" void c_iniconsole(natb cc)
 {
-    // vid::clear(cc);
+    vid::clear_screen(cc);
 }
 
 /// 
@@ -253,7 +254,7 @@ bool kbd_init()
  */
 bool vid_init()
 {
-    //clear_screen(0x00,0x0F);
+    vid::clear_screen(vid::attr);
     flog(LOG_INFO, "vid: video inizializzato");
     return true;
 }

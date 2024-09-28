@@ -1,12 +1,16 @@
-#include "internal.h"
+#include "libce.h"
 #include "vid.h"
 
-using namespace vid;
+namespace vid{
 
-void clear_screen(natb a) 
-{
-	attr = static_cast<natw>(a) << 8;
-	for (unsigned int i = 0; i < VIDEO_SIZE; i++) 
-		video[i] = ' ' | attr;
-	cursore();
+	void clear_screen(natb attribute) 
+	{
+
+		for(int i=0;i<VIDEO_SIZE*4;i+=4){
+			video[i] = ' ';
+			video[i+1] = attribute;
+		}
+		attr = attribute;
+	}
 }
+

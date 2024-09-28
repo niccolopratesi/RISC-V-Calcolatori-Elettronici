@@ -1,10 +1,11 @@
 #include "internal.h"
 #include "kbd.h"
+#include "costanti.h"
 
 using namespace kbd;
 
 void reboot()
 {
 	for(;;);
-	//outputb(0xFE, iCMR);
+	(*(volatile natl *)VIRT_TEST) = FINISHER_PASS;
 }

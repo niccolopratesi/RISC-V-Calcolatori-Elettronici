@@ -272,6 +272,11 @@ bool crea_finestra_FM(paddr root_tab)
 	// vogliamo settare il bit PWT per la pagina che contiene la memoria
 	// video.  Per farlo dobbiamo rinunciare a settare PS per la prima regione
 
+	// Mappa VIRT TEST per lo shutdown
+	if(map(root_tab, VIRT_TEST,  VIRT_TEST+DIM_PAGINA, BIT_X | BIT_W | BIT_R | BIT_G, identity_map) != (VIRT_TEST+DIM_PAGINA)){
+		return false;
+	}
+
 	// Mappa UART
 	if(map(root_tab, UART0, UART0+DIM_PAGINA, BIT_X | BIT_W | BIT_R | BIT_G, identity_map) != (UART0+DIM_PAGINA)){
 		return false;

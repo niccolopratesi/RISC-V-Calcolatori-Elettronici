@@ -2,6 +2,6 @@
 
 namespace vid {
 
-natw attr = 0x0200;
+    natb attr = 0x0F;
 
 }

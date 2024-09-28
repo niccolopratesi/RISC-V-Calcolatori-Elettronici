@@ -1,5 +1,6 @@
 #include "libce.h"
-
+#include "vid.h"
+using namespace vid;
 int int_read()
 {
 	int i = 0, sign = 1;
