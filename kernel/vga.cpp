@@ -51,9 +51,6 @@ using namespace vid;
 #define INPUT_STATUS_REGISTER 0x3da
 */
 
-#define VGA_TEXT_HEIGHT 25
-#define VGA_TEXT_WIDTH  80
-
 //remapped VGA ports into qemu
 // #define AC                    0x400           //attribute or palette registers              
 // #define AC_READ               0x401           //attribute read register                     

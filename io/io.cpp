@@ -3,6 +3,7 @@
 #include "sys.h"
 #include "sysio.h"
 #include "io.h"
+#include "vid.h"
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 // @defgroup ioheap Memoria Dinamica
@@ -113,8 +114,7 @@ bool kbd_init(){
 
 bool vid_init(){
 
-    //clear_screen(0x00,0x0F);
-
+    //vid::clear_screen(vid::attr);
     return true;
 }
 
