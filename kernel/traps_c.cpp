@@ -9,14 +9,13 @@
 #include "sys.h"
 #include "vm.h"
 
-void timer_debug(){
+void timer_debug() {
   flog(LOG_INFO, "Timer fired");
 }
 
 /// @brief Gestore delle interruzioni (flag in sscause = 1)
 /// @return 1 se interruzione esterna, 2 se software, 3 se timer, 0 altrimenti
 int dev_int() {
-
     natq scause = readSCAUSE();
     
     // Interruzione esterna
@@ -61,8 +60,7 @@ int dev_int() {
 }
 
 /// Legge il numero della syscall in a7 e chiama la funzione corrispondente
-void syscall(void)
-{
+void syscall(void) {
   natq num;
   des_proc *p = esecuzione;
 
@@ -117,64 +115,29 @@ void syscall(void)
   }
 }
 
-/// Parte C++ del gestore delle interruzioni in modalità supervisor dal modulo utente
-/// Raccoglie l'interruzione e imposta il trap vector al gestore k_trap
-extern "C" void sInterruptHandler(){
-    if ((readSSTATUS() & SSTATUS_SPP) != 0) 
-        fpanic("usertrap: not from user mode");
-
-    if (readSCAUSE() == 8) {
-        // syscall dallo spazio utente
-
-        // In EPC c'è l'indirizzo dell'istruzione che ha causato l'ecall
-        // Salviamo l'indirizzo dell'istruzione successiva, a cui si deve tornare
-        esecuzione->epc += 4;
-        
-        // Usiamo primitive atomiche => non abilitiamo le interruzioni
-        // enableSInterrupts();
-
-        syscall();
-    }
-    else if (dev_int() != 0) {
-        // OK
-    }
-    else {
-        flog(LOG_WARN, "unexpected scause=%p, id=%p", readSCAUSE(), esecuzione->id);
-        flog(LOG_WARN, "sepc=%p, stval=%p", readSEPC(), readSTVAL());
-        
-        // Terminiamo e distruggiamo il processo
-        c_terminate_p();
-    }
-
-    //Potremmo venire da codice che aveva precedentemente eseguito
-    //in modalita' supervisor con le interruzioni abilitate.
-    //Prima di fare qualsiasi cosa disattiviamole.
-    disableSInterrupts();
-}
-
+// Parte C++ del gestore delle interruzioni in modalità supervisor
 extern "C" void kInterruptHandler(){
     natq epc = readSEPC();
     natq status = readSSTATUS();
     natq cause = readSCAUSE();
 
-    if ((status & SSTATUS_SPP) == 0) 
-       fpanic("kerneltrap: not from supervisor mode");
     if ((status & SSTATUS_SIE) != 0)
-        fpanic("kerneltrap: interrupts enabled");
+        fpanic("trap: interrupts enabled");
 
-    // ecall da s-mode
-    if (cause == 9) {
+    // ecall da u-mode (8) o s-mode (9)
+    if (cause == 8 || cause == 9) {
         // Salviamo l'indirizzo dell'istruzione successiva, a cui si deve tornare
         esecuzione->epc += 4;
         syscall();
         return;
     }
-    
-    if (dev_int() == 0) {
-        // Eccezione
-        flog(LOG_WARN, "scause=%p", readSCAUSE());
-        flog(LOG_WARN, "sepc=%p, stval=%p", readSEPC(), readSTVAL());
-        fpanic("kerneltrap");
-    }
 
+    int dev = dev_int();
+    if (dev == 0) {
+        // Eccezione
+        flog(LOG_WARN, "unexpected scause=%p, id=%p", readSCAUSE(), esecuzione->id);
+        flog(LOG_WARN, "sepc=%p, stval=%p", readSEPC(), readSTVAL());
+        // Terminiamo e distruggiamo il processo
+        c_terminate_p();
+    }
 }
