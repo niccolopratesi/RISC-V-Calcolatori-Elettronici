@@ -43,7 +43,7 @@ namespace kbd {
       cap = (capability_elem *) (conf_base + cap->next_pointer);
     }
 
-    virtio_pci_common_cfg *comm_cfg = (virtio_pci_common_cfg *) kbd::MMIO;
+    virtio_pci_common_cfg *comm_cfg = (virtio_pci_common_cfg *) MMIO;
 
     // "1. Reset device."
     comm_cfg->device_status = 0;
@@ -70,13 +70,13 @@ namespace kbd {
     // "7. Perform device-specific setup."
     // "7.1. Discovery of virtqueues for the device."
     comm_cfg->queue_select = 0;
-    kbd::eventq_notify_addr = kbd::MMIO + 0x3000 + comm_cfg->queue_notify_off * notify_off_multiplier;
+    eventq_notify_addr = MMIO + 0x3000 + comm_cfg->queue_notify_off * notify_off_multiplier;
 
     // "7.2. Optional per-bus setup."
-    if (!msix_add_entry((MSIX_entry *) kbd::MSIX, 0, VIRT_IMSIC_S, 1)) {
+    if (!msix_add_entry((MSIX_entry *) MSIX, 0, VIRT_IMSIC_S, 1)) {
       goto error_set_failed;
     }
-    if (!msix_add_entry((MSIX_entry *) kbd::MSIX, 1, VIRT_IMSIC_S, 1)) {
+    if (!msix_add_entry((MSIX_entry *) MSIX, 1, VIRT_IMSIC_S, 1)) {
       goto error_set_failed;
     }
     comm_cfg->config_msix_vector = 0x0;
@@ -88,17 +88,11 @@ namespace kbd {
 
     // "7.4. Population of virtqueues."
     // coda 0
-    if (!create_virtq(kbd::eventq, kbd::QUEUE_SIZE, 0)) {
-      goto error_set_failed;
-    }
-    if (!enable_virtq(*comm_cfg, 0, kbd::QUEUE_SIZE, 0x1, kbd::eventq)) {
+    if (!enable_virtq(*comm_cfg, 0, QUEUE_SIZE, 0x1, *eventq)) {
       goto error_set_failed;
     }
     // coda 1
-    if (!create_virtq(kbd::statusq, kbd::QUEUE_SIZE, 0)) {
-      goto error_set_failed;
-    }
-    if (!enable_virtq(*comm_cfg, 1, kbd::QUEUE_SIZE, 0x1, kbd::statusq)) {
+    if (!enable_virtq(*comm_cfg, 1, QUEUE_SIZE, 0x1, *statusq)) {
       goto error_set_failed;
     }
 

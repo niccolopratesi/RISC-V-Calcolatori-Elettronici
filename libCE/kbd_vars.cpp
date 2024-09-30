@@ -23,10 +23,10 @@ namespace kbd {
   };
 
   paddr eventq_notify_addr;
-  MSIX_capability *msix_cap;
+  MSIX_capability *msix_cap = nullptr;
 
-  virtio_input_event buf[QUEUE_SIZE];
+  virtio_input_event *buf = nullptr;
   natw next_idx_read = 0;
-  virtq eventq;
-  virtq statusq;
+  virtq *eventq = nullptr;
+  virtq *statusq = nullptr;
 }

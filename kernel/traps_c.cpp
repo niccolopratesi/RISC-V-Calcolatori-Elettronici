@@ -20,6 +20,7 @@ int dev_int() {
     
     // Interruzione esterna
     if (scause == 0x8000000000000009L) {
+        flog(LOG_INFO, "interruzione esterna");
         // PLIC
         int irq = plic_claim();
 
