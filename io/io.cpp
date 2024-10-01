@@ -169,6 +169,8 @@ void estern_kbd(int)
   char a;
   bool fine;
 
+  flog(LOG_INFO, "vado in esecuzione per la prima volta");
+
   for (;;) {
     kbd::disable_intr();
 
@@ -219,10 +221,6 @@ extern "C" void c_iniconsole(natb cc)
     vid::clear_screen(cc);
 }
 
-/// 
-const int INTR_TIPO_KBD = 2;
-const int KBD_IRQ = 1;
-
 /*! @brief Inizializza la tastiera
  *  @return true in caso di successo, false altrimenti
  */
@@ -246,11 +244,7 @@ bool kbd_init()
     // prepariamo la virtqueue per ricevere i dati
     kbd::add_max_buf();
 
-    // momentaneamente solo per test
-    kbd::enable_intr();
-    // kbd::disable_intr();
-
-    if (activate_pe(estern_kbd, 0, MIN_EXT_PRIO + INTR_TIPO_KBD, LIV_SISTEMA, KBD_IRQ) == 0xFFFFFFFF) {
+    if (activate_pe(estern_kbd, 0, MAX_EXT_PRIO - KBD_IRQ, LIV_SISTEMA, KBD_IRQ) == 0xFFFFFFFF) {
         flog(LOG_ERR, "kbd: imposssibile creare estern_kbd");
         return false;
     }

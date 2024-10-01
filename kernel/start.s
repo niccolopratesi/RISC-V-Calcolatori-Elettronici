@@ -35,7 +35,7 @@ start:
   csrw sireg, t1
   li t0, 0x72   # EITHRESHOLD
   csrw siselect, t0
-  li t1, 5
+  li t1, 0
   csrw sireg, t1
   # Keyboard specific
   li t0, 0xC0   # EI0

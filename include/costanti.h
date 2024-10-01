@@ -30,6 +30,9 @@
 // numero massimo interruzione
 #define MAX_IRQ         32
 
+// codice interruzione tastiera
+#define KBD_IRQ     1
+
 //indirizzo inizio VIRT_TEST
 #define VIRT_TEST       0x100000L
 //indirizzo inizio PLIC

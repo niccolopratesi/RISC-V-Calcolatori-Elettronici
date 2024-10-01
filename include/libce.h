@@ -14,6 +14,9 @@
 // extern "C" void inputbw(ioaddr reg, natw vetti[], int quanti);
 //-- MEMORY MAPPED IO
 
+// Funzioni per l'IMSIC
+extern "C" natq read_write_stopei();
+
 // Funzioni per leggere da tastiera
 namespace kbd {
   char conv(natb c);
@@ -48,30 +51,37 @@ void hd_disable_intr();
 void hd_output_sect(natb *buf);
 void hd_input_sect(natb *buf);
 void hd_ack_intr();
+
 // funzioni per il bus mastering IDE
 bool bm_find(natb& bus, natb& dev, natb& fun);
 void bm_init(natb bus, natb dev, natb fun);
 void bm_prepare(paddr prd, bool write);
 void bm_start();
 void bm_ack();
+
 // Funzioni per la porta seriale
 void serial_o(natb c);
 void serial2_o(natb c);
+
 // Funzioni sulle stringhe
 void *memset(void *dest, int c, size_t n);
 void *memcpy(void *dest, const void *src, size_t n);
 size_t strlen(const char str[]);
 char* copy(const char src[], char dst[]);
+
 // timer
 void attiva_timer(natw N);
+
 // Funzione di attesa
 void pause();
+
 // Funzioni relative al meccanismo di interruzione
 extern "C" void gate_init(natl num, void routine());
 extern "C" void trap_init(natl num, void routine());
 extern "C" void apic_set_MIRQ(natl irq, bool enable);
 extern "C" void apic_set_TRGM(natl irq, bool enable);
 extern "C" void apic_set_VECT(natl irq, natb vec);
+
 // Funzioni per il bus PCI
 natb pci_read_confb(natb bus, natb dev, natb fun, natb regn);
 natw pci_read_confw(natb bus, natb dev, natb fun, natb regn);
@@ -82,6 +92,7 @@ void pci_write_confl(natb bus, natb dev, natb fun, natb regn, natl data);
 bool pci_find_dev(natb& bus, natb& dev, natb& fun, natw vendorID, natw deviceID);
 bool pci_find_class(natb& bus, natb& dev, natb& fun, natb code[]);
 bool pci_next(natb& bus, natb& dev,natb& fun);
+
 // Funzioni per lo heap
 void heap_init(void *start, size_t size, natq initmem = 0, natq initdim = 0);
 void* alloca(size_t dim);

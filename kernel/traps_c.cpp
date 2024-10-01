@@ -20,21 +20,19 @@ int dev_int() {
     
     // Interruzione esterna
     if (scause == 0x8000000000000009L) {
-        flog(LOG_INFO, "interruzione esterna");
-        // PLIC
-        int irq = plic_claim();
+        // IMSIC - stopei
+        natq irq = read_write_stopei();
+        irq = irq >> 16;
+        flog(LOG_INFO, "interruzione esterna irq=%ld", irq);
 
-        //handler interruzione esterna
-        if(a_p[irq]){
+        // handler interruzione esterna
+        if (a_p[irq]) {
             inspronti();
-            inserimento_lista(pronti,a_p[irq]);
+            inserimento_lista(pronti, a_p[irq]);
             schedulatore();
+        } else {
+            flog(LOG_WARN, "Interruzione esterna non prevista: %d", irq);
         }
-        else 
-            flog(LOG_WARN, "Unexpected interrupt: %d", irq);
-
-        if (irq)
-            plic_complete(irq);
 
         return 1;
     }
@@ -48,7 +46,6 @@ int dev_int() {
 
     // Interruzione timer
     if (scause == 0x8000000000000005L) {
-        // TEST: timer interrupts
         // timer_debug();
 
         schedule_next_timer_interrupt();
@@ -66,7 +63,6 @@ bool syscall_supervisor(void)
 
   switch (p->contesto[I_A7]) {
   case TIPO_WFI:
-    plic_complete(p->contesto[I_A0]);
     schedulatore();
     break;
   case TIPO_TRA :
