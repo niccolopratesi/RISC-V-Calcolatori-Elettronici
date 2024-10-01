@@ -97,6 +97,7 @@ extern "C" void pci_init()
     }
     if (pointer->device_id == 0x1052 && pointer->vendor_id == 0x1af4) {
       kbd_setup(pointer);
+      flog(LOG_INFO, "KBD inizializzata");
     }
   }
 }
