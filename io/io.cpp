@@ -229,13 +229,15 @@ const int KBD_IRQ = 1;
 bool kbd_init()
 {
     // inizializzazione delle strutture dati della tastiera
-    // le interruzioni sono disabilitate al suo interno
     kbd::eventq = (virtq *) trasforma(alloca(sizeof(*kbd::eventq)));
     kbd::statusq = (virtq *) trasforma(alloca(sizeof(*kbd::statusq)));
     kbd::buf = (virtio_input_event *) trasforma(alloca(sizeof(*kbd::buf) * kbd::QUEUE_SIZE));
-    flog(LOG_INFO, "indirizzo del buffer %lx", kbd::buf);
     create_virtq(*kbd::eventq, kbd::QUEUE_SIZE, 0);
     create_virtq(*kbd::statusq, kbd::QUEUE_SIZE, 0);
+    kbd::eventq->desc = (virtq_desc *) trasforma(kbd::eventq->desc);
+    kbd::eventq->avail = (virtq_avail *) trasforma(kbd::eventq->avail);
+    kbd::eventq->used = (virtq_used *) trasforma(kbd::eventq->used);
+    // le interruzioni sono disabilitate di default dalla init()
     if (!kbd::init()) {
       flog(LOG_ERR, "kbd: impossibile configurare la tastiera");
       return false;
@@ -245,12 +247,9 @@ bool kbd_init()
     kbd::add_max_buf();
 
     // momentaneamente solo per test
-    // kbd::enable_intr();
+    kbd::enable_intr();
+    // kbd::disable_intr();
 
-    natl *pending = (natl *) (kbd::MSIX + 2048);
-    while (*pending == 0);
-    flog(LOG_INFO, "DATO ARRIVATO");
-    
     if (activate_pe(estern_kbd, 0, MIN_EXT_PRIO + INTR_TIPO_KBD, LIV_SISTEMA, KBD_IRQ) == 0xFFFFFFFF) {
         flog(LOG_ERR, "kbd: imposssibile creare estern_kbd");
         return false;
