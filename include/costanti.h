@@ -93,14 +93,14 @@
 #define TIPO_ACC		0x36	// access
 //   )
 //   ( fornite dal modulo I/O
-#define IO_TIPO_HDR		0x40	// readhd_n
-#define IO_TIPO_HDW		0x41	// writehd_n
+#define IO_TIPO_HDR		  0x40	// readhd_n
+#define IO_TIPO_HDW		  0x41	// writehd_n
 #define IO_TIPO_DMAHDR	0x42	// dmareadhd_n
 #define IO_TIPO_DMAHDW	0x43	// dmawritehd_n
-#define IO_TIPO_RCON	0x44	// readconsole
-#define IO_TIPO_WCON	0x45	// writeconsole
-#define IO_TIPO_INIC	0x46	// iniconsole
-#define IO_TIPO_GMI		0x47	// getiomeminfo
+#define IO_TIPO_RCON	  0x44	// readconsole
+#define IO_TIPO_WCON	  0x45	// writeconsole
+#define IO_TIPO_INIC	  0x46	// iniconsole
+#define IO_TIPO_GMI		  0x47	// getiomeminfo
 //   )
 // )
 

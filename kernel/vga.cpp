@@ -110,15 +110,15 @@ extern "C" void vga_init() {
   //   j++;
   // }
   //test clear
-  vid::clear_screen(0x0f);
+  // vid::clear_screen(0x0f);
 
   //test print
   // print_VGA("Hello RISC-V world!", 0x0f);
   // print_VGA("This is a very very very long text, really really really long, to try it out", 0x0f);
   // print_VGA("\nLet's go on a new line", 0x0f);
-  vid::str_write("Hello RISC-V world!");
-  vid::str_write("This is a very very very long text, really really really long, to try it out");
-  vid::str_write("\nLet's go on a new line");
+  // vid::str_write("Hello RISC-V world!");
+  // vid::str_write("This is a very very very long text, really really really long, to try it out");
+  // vid::str_write("\nLet's go on a new line");
 
   //test scroll
   //vid::scroll();
