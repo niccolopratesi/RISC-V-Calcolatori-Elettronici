@@ -7,6 +7,7 @@ namespace kbd {
   bool init()
   {
     PCI_config *conf = (PCI_config *) PCI;
+    virtio_pci_common_cfg *comm_cfg = (virtio_pci_common_cfg *) MMIO;
     natl notify_off_multiplier;
 
     // verifica che il dispositivo trovato vada bene
@@ -43,8 +44,6 @@ namespace kbd {
       cap = (capability_elem *) (conf_base + cap->next_pointer);
     }
 
-    virtio_pci_common_cfg *comm_cfg = (virtio_pci_common_cfg *) MMIO;
-
     // "1. Reset device."
     comm_cfg->device_status = 0;
     while (comm_cfg->device_status);
@@ -79,7 +78,7 @@ namespace kbd {
     if (!msix_add_entry((MSIX_entry *) MSIX, 1, VIRT_IMSIC_S, 1)) {
       goto error_set_failed;
     }
-    comm_cfg->config_msix_vector = 0x0;
+    comm_cfg->config_msix_vector = 0;
     if (comm_cfg->config_msix_vector == VIRTIO_MSI_NO_VECTOR) {
       goto error_set_failed;
     }
@@ -88,11 +87,11 @@ namespace kbd {
 
     // "7.4. Population of virtqueues."
     // coda 0
-    if (!enable_virtq(*comm_cfg, 0, QUEUE_SIZE, 0x1, *eventq)) {
+    if (!enable_virtq(*comm_cfg, 0, QUEUE_SIZE, 1, *eventq)) {
       goto error_set_failed;
     }
     // coda 1
-    if (!enable_virtq(*comm_cfg, 1, QUEUE_SIZE, 0x1, *statusq)) {
+    if (!enable_virtq(*comm_cfg, 1, QUEUE_SIZE, 1, *statusq)) {
       goto error_set_failed;
     }
 
