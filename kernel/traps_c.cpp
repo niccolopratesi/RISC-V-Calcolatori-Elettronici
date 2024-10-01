@@ -21,6 +21,7 @@ int dev_int() {
     
     // Interruzione esterna
     if (scause == 0x8000000000000009L) {
+        flog(LOG_INFO, "interruzione esterna");
         // PLIC
         int irq = plic_claim();
 
@@ -122,6 +123,8 @@ void syscall(void)
 extern "C" void sInterruptHandler(){
     if ((readSSTATUS() & SSTATUS_SPP) != 0) 
         fpanic("usertrap: not from user mode");
+
+    flog(LOG_INFO, "interruzione\n");
 
     if (readSCAUSE() == 8) {
         // syscall dallo spazio utente

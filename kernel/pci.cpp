@@ -23,6 +23,26 @@
 #define EV_PWR        0x16
 #define EV_FF_STATUS  0x17
 
+extern "C" natq read_eie0();
+extern "C" natq read_eip0();
+
+asm("read_eip0: \n li t0, 0x80 \n csrw siselect, t0 \n csrr a0, sireg \n ret");
+asm("read_eie0: \n li t0, 0xC0 \n csrw siselect, t0 \n csrr a0, sireg \n ret");
+
+extern "C" void set_sie();
+extern "C" void set_sie_in_sstatus();
+extern "C" natq read_sie();
+extern "C" natq read_sip();
+extern "C" natq read_sstatus();
+extern "C" natq read_stvec();
+
+asm("set_sie: \n li t0, 0b1000100010 \n csrw sie, t0 \n ret");
+asm("read_sie: \n csrr a0, sie \n ret");
+asm("read_sip: \n csrr a0, sip \n ret");
+asm("read_sstatus: \n csrr a0, sstatus \n ret");
+asm("set_sie_in_sstatus: \n li t0, 0b10 \n csrs sstatus, t0 \n ret");
+asm("read_stvec: \n csrr a0, stvec \n ret");
+
 namespace kbd {
   const natl MAX_CODE = 42;
   const natw QUEUE_SIZE = 64;
@@ -201,11 +221,25 @@ bool kbd_setup(PCI_config *conf)
   kbd::msix_data_buffer = 0;
   #define VIRT_IMSIC_M 0x24000000
   #define VIRT_IMSIC_S 0x28000000
-  if (!msix_add_entry((MSIX_entry *) kbd::KBD_MSIX, 0, VIRT_IMSIC_M, 1)) {
+  flog(LOG_INFO, "stvec %lx", read_stvec);
+  flog(LOG_INFO, "setto sie");
+  // set_sie();
+  // set_sie_in_sstatus();
+  flog(LOG_INFO, "sstatus %ld", read_sstatus());
+  flog(LOG_INFO, "sie %ld", read_sie());
+  flog(LOG_INFO, "sip %ld", read_sip());
+  flog(LOG_INFO, "eie0 %ld", read_eie0());
+  flog(LOG_INFO, "eip0 %ld", read_eip0());
+  flog(LOG_INFO, "provo a scrivere nel IMSIC");
+  flog(LOG_INFO, "provo a leggere nel IMSIC %d", *((natl *) VIRT_IMSIC_S));
+  // *((natl *) VIRT_IMSIC_S) = 1;
+  flog(LOG_INFO, "rileggo eip0 %ld", read_eip0());
+  flog(LOG_INFO, "rileggo sip %ld", read_sip());
+  if (!msix_add_entry((MSIX_entry *) kbd::KBD_MSIX, 0, VIRT_IMSIC_S, 1)) {
     return false;
   }
   // flog(LOG_INFO, "vector control 0x%x", me[0].vector_control);
-  if (!msix_add_entry((MSIX_entry *) kbd::KBD_MSIX, 1, VIRT_IMSIC_M, 1)) {
+  if (!msix_add_entry((MSIX_entry *) kbd::KBD_MSIX, 1, VIRT_IMSIC_S, 1)) {
     return false;
   }
   // flog(LOG_INFO, "map dei config change event nel vettore msi-x 0");
@@ -214,6 +248,7 @@ bool kbd_setup(PCI_config *conf)
     // flog(LOG_INFO, "errore nell'assegnamento del config msix vector");
     return false;
   }
+  flog(LOG_INFO, "prova2");
 
   // "7.3. Reading and possibly writing the device's virtio configuration space."
   /* in_cfg->select = VIRTIO_INPUT_CFG_ID_NAME;
@@ -232,7 +267,7 @@ bool kbd_setup(PCI_config *conf)
     // flog(LOG_ERR, "errore nella creazione della queue 0");
     return false;
   }
-  if (!enable_virtq(*comm_cfg, 0, kbd::QUEUE_SIZE, 0x1, kbd::eventq)) {
+  if (!enable_virtq(*comm_cfg, 0, kbd::QUEUE_SIZE, 1, kbd::eventq)) {
     // flog(LOG_INFO, "errore nell'abilitazione della queue");
     return false;
   }
@@ -241,7 +276,7 @@ bool kbd_setup(PCI_config *conf)
     // flog(LOG_ERR, "errore nella creazione della queue 1");
     return false;
   }
-  if (!enable_virtq(*comm_cfg, 1, kbd::QUEUE_SIZE, 0x1, kbd::statusq)) {
+  if (!enable_virtq(*comm_cfg, 1, kbd::QUEUE_SIZE, 1, kbd::statusq)) {
     // flog(LOG_INFO, "errore nell'abilitazione della queue");
     return false;
   }
@@ -278,12 +313,13 @@ bool kbd_setup(PCI_config *conf)
   // attesa che il buffer venga consumato dalla periferica
   MSIX_PBA_entry *mpbae = (MSIX_PBA_entry *) (kbd::KBD_MSIX + 2048);
   // flog(LOG_INFO, "mi metto in attesa di una notifica a 0x%x", mpbae);
-  while (true);
+  // while (true);
   // while (kbd::msix_data_buffer == 0);
+  // flog(LOG_INFO, "dato presente nel msix buffer %d", kbd::msix_data_buffer);
   // while (mpbae[0].pending_bits == 0);
   // while (mpbae[0].pending_bits == 0 && kbd::msix_data_buffer == 0);
   // lettura del buffer usato dalla periferica
-  flog(LOG_INFO, "FINALMENTE UN DATO");
+  // flog(LOG_INFO, "FINALMENTE UN DATO");
 
   return true;
 

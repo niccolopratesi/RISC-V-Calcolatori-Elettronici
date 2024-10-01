@@ -5,11 +5,11 @@ start:
   # Init interrupt ###
 
   # Disable current privilege interrupts
-  csrci mstatus, 0b1010
+  # csrci mstatus, 0b1010
 
   # Disable machine mode interrupts
   li t0, 0
-  csrw mie, t0
+  # csrw mie, t0
 
   # delegate all interrupts and exceptions to supervisor mode
   li t0, 0xffffffffffffffff
@@ -30,18 +30,18 @@ start:
 
   # Enable MSI (PCI) interrupts
   li t0, 0x70   # EIDELIVERY
-  csrw miselect, t0
+  csrw siselect, t0
   li t1, 1
-  csrw mireg, t1
+  csrw sireg, t1
   li t0, 0x72   # EITHRESHOLD
-  csrw miselect, t0
-  li t1, 5
-  csrw mireg, t1
+  csrw siselect, t0
+  li t1, 0xFFFF
+  csrw sireg, t1
   # Keyboard specific
-  li t0, 0xC0   # EI0
-  csrw miselect, t0
-  li t1, 0b10
-  csrw mireg, t1
+  li t0, 0xC0   # EIE0
+  csrw siselect, t0
+  li t1, 0xFFFFFFFF
+  csrw sireg, t1
 
   # Init memory ###
 
