@@ -3,7 +3,7 @@
 
 namespace kbd {
 
-  char conv(natb c)
+  char conv(natw c)
   {
     char cc;
     natl pos = 0;

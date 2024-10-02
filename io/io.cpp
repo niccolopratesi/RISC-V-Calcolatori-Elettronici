@@ -98,17 +98,17 @@ extern "C" void c_writeconsole(const char* buff, natq quanti)
 {
     des_console *p_des = &console;
 
-    if (!access(buff,quanti,false,false)) {
-        flog(LOG_WARN,"writeconsole: parametri non validi: %p, %lu:", buff, quanti);
+    /*
+    if (!access(buff, quanti, false, false)) {
+        flog(LOG_WARN,"writeconsole: parametri non validi: %p, %ld:", buff, quanti);
         abort_p();
     }
+    */
 
     sem_wait(p_des->mutex);
 #ifndef AUTOCORR
-    for (natq i = 0; i < quanti; i++) {
+    for (natq i = 0; i < quanti; i++)
         vid::char_write(buff[i]);
-        flog(LOG_INFO, "%c", buff[i]);
-    }
 #else /*AUTOCORR*/
     if (quanti > 0 && buff[quanti - 1] == '\n')
         quanti--;
@@ -142,10 +142,12 @@ extern "C" natq c_readconsole(char* buff, natq quanti)
     des_console *d = &console;
     natq rv;
 
+    /*
     if (!access(buff, quanti, true)) {
-        flog(LOG_WARN, "readconsole: parametri non validi: %p, %lu:", buff, quanti);
+        flog(LOG_WARN, "readconsole: parametri non validi: %p, %ld:", buff, quanti);
         abort_p();
     }
+    */
 
 #ifdef AUTOCORR
     return 0;
@@ -169,18 +171,17 @@ void estern_kbd(int)
   char a;
   bool fine;
 
-  flog(LOG_INFO, "vado in esecuzione per la prima volta");
-
   for (;;) {
     kbd::disable_intr();
 
     while (kbd::more_to_read()) {
       a = kbd::char_read_intr();
 
+      if (a == 0)
+        continue;
+
       fine = false;
       switch (a) {
-      case 0:
-        break;
       case '\b':
         if (d->cont < d->dim) {
           d->punt--;
@@ -204,6 +205,7 @@ void estern_kbd(int)
         break;
       }
     }
+
     kbd::add_max_buf();
     if (fine)
       sem_signal(d->sincr);
@@ -332,6 +334,26 @@ extern "C" void main(natq sem_io)
     flog(LOG_INFO,"Inizializzo la console (kbd + video)");
     if(!console_init()){
         panic("Inizializzazione console fallita");
+    } else {
+      flog(LOG_INFO, "\n === PROVIAMO A USARE LA CONSOLE ===");
+
+      flog(LOG_INFO, "inizializzazione della cosnole (iniconsole)");
+      c_iniconsole(0xf0);
+
+      flog(LOG_INFO, "scrivo sulla console (writeconsole)");
+      const char hw[] = "Hello World!";
+      natq hw_len = strlen(hw);
+      c_writeconsole(hw, hw_len);
+
+      flog(LOG_INFO, "leggo dalla console (readconsole)");
+      char buf[66];
+      natq buf_len = 66;
+      natq read = c_readconsole((char *) trasforma(buf), buf_len);
+      buf[read] = '\0';
+      flog(LOG_INFO, "read %d", read);
+      flog(LOG_INFO, "ho letto %s", buf);
+
+      flog(LOG_INFO, "=== FINE CONSOLE === \n");
     }
     
     flog(LOG_INFO,"Inizializzazione modulo I/O completata");

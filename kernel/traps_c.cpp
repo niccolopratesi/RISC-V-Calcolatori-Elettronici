@@ -23,7 +23,6 @@ int dev_int() {
         // IMSIC - stopei
         natq irq = read_write_stopei();
         irq = irq >> 16;
-        flog(LOG_INFO, "interruzione esterna irq=%ld", irq);
 
         // handler interruzione esterna
         if (a_p[irq]) {
@@ -130,9 +129,12 @@ extern "C" void supervisor_handler()
     if ((status & SSTATUS_SIE) != 0)
         fpanic("trap: interrupts enabled");
 
-    if (cause == 9 && syscall_supervisor()) {
+    if (cause == 9) {
         esecuzione->epc += 4;
-        return;
+        if (syscall_supervisor()) {
+            return;
+        }
+        esecuzione->epc -= 4;
     }
 
     // ecall da u-mode (8) o s-mode (9)

@@ -19,7 +19,7 @@ extern "C" natq read_write_stopei();
 
 // Funzioni per leggere da tastiera
 namespace kbd {
-  char conv(natb c);
+  char conv(natw c);
   char char_read_intr();
   void enable_intr();
   void disable_intr();
