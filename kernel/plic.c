@@ -4,6 +4,10 @@
 #include "uart.h"
 
 void plic_init() {
+    // L'introduzione dell'IMSIC a causato il cambio da PLIC a APLIC.
+    // L'inizializzazione del PLIC non è compatibile con l'APLIC
+    // dovrà quindi essere ripristinata in futuro.
+
     // Set desired IRQ priorities non-zero (otherwise disabled)
     // *(natl*)(PLIC + UART0_IRQ*4) = 1;
 

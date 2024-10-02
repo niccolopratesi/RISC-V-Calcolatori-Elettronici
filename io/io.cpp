@@ -98,12 +98,10 @@ extern "C" void c_writeconsole(const char* buff, natq quanti)
 {
     des_console *p_des = &console;
 
-    /*
     if (!access(buff, quanti, false, false)) {
         flog(LOG_WARN,"writeconsole: parametri non validi: %p, %ld:", buff, quanti);
         abort_p();
     }
-    */
 
     sem_wait(p_des->mutex);
 #ifndef AUTOCORR
@@ -142,12 +140,10 @@ extern "C" natq c_readconsole(char* buff, natq quanti)
     des_console *d = &console;
     natq rv;
 
-    /*
     if (!access(buff, quanti, true)) {
         flog(LOG_WARN, "readconsole: parametri non validi: %p, %ld:", buff, quanti);
         abort_p();
     }
-    */
 
 #ifdef AUTOCORR
     return 0;
@@ -237,6 +233,9 @@ bool kbd_init()
     kbd::eventq->desc = (virtq_desc *) trasforma(kbd::eventq->desc);
     kbd::eventq->avail = (virtq_avail *) trasforma(kbd::eventq->avail);
     kbd::eventq->used = (virtq_used *) trasforma(kbd::eventq->used);
+    kbd::statusq->desc = (virtq_desc *) trasforma(kbd::statusq->desc);
+    kbd::statusq->avail = (virtq_avail *) trasforma(kbd::statusq->avail);
+    kbd::statusq->used = (virtq_used *) trasforma(kbd::statusq->used);
     // le interruzioni sono disabilitate di default dalla init()
     if (!kbd::init()) {
       flog(LOG_ERR, "kbd: impossibile configurare la tastiera");
@@ -334,26 +333,6 @@ extern "C" void main(natq sem_io)
     flog(LOG_INFO,"Inizializzo la console (kbd + video)");
     if(!console_init()){
         panic("Inizializzazione console fallita");
-    } else {
-      flog(LOG_INFO, "\n === PROVIAMO A USARE LA CONSOLE ===");
-
-      flog(LOG_INFO, "inizializzazione della cosnole (iniconsole)");
-      c_iniconsole(0xf0);
-
-      flog(LOG_INFO, "scrivo sulla console (writeconsole)");
-      const char hw[] = "Hello World!";
-      natq hw_len = strlen(hw);
-      c_writeconsole(hw, hw_len);
-
-      flog(LOG_INFO, "leggo dalla console (readconsole)");
-      char buf[66];
-      natq buf_len = 66;
-      natq read = c_readconsole((char *) trasforma(buf), buf_len);
-      buf[read] = '\0';
-      flog(LOG_INFO, "read %d", read);
-      flog(LOG_INFO, "ho letto %s", buf);
-
-      flog(LOG_INFO, "=== FINE CONSOLE === \n");
     }
     
     flog(LOG_INFO,"Inizializzazione modulo I/O completata");
