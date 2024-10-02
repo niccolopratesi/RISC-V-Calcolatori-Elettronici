@@ -319,7 +319,7 @@ extern "C" void main(natq sem_io)
 {
     //inizializzazione semaforo mutua esclusione per heap
     ioheap_mutex = sem_ini(1);
-    if(ioheap_mutex == 0xFFFFFFFF){
+    if (ioheap_mutex == 0xFFFFFFFF) {
         panic("Impossibile creare semaforo ioheap_mutex");
     }
 
@@ -331,7 +331,7 @@ extern "C" void main(natq sem_io)
 
     //inizializzazione periferiche
     flog(LOG_INFO,"Inizializzo la console (kbd + video)");
-    if(!console_init()){
+    if (!console_init()) {
         panic("Inizializzazione console fallita");
     }
     
