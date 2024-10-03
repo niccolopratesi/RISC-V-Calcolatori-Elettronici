@@ -42,8 +42,5 @@ namespace vid {
 	
 	void cursore();
 	void scroll();
-	
-	extern void writeport(natl port, natb index, natb val);
-	extern natb readport(natl port, natb index);
 }
 #endif

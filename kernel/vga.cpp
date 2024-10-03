@@ -50,6 +50,10 @@ void load_font(unsigned char* font_16);
 void load_palette();
 void post_font();
 
+// funzioni per leggere e scrivere nei registri interni della VGA
+void writeport(natl port, natb index, natb val);
+natb readport(natl port, natb index);
+
 // write to this to discard data
 volatile natb __attribute__((unused)) discard; 
 
@@ -130,6 +134,84 @@ extern "C" void vga_init() {
   flog(LOG_INFO,"VGA inizializzata");
 }
 
+natb readport(natl port, natb index) 
+{
+  natb read;
+
+  switch (port) {
+  case AC:
+      //reset to index mode
+      discard= VGA_BASE[INPUT_STATUS_REGISTER];
+      VGA_BASE[AC] = index;
+      read = VGA_BASE[AC_READ];
+      break;
+  case MISC:
+      read = VGA_BASE[MISC_READ];
+      break;
+  case SEQ:
+      VGA_BASE[port] = index;
+      read = VGA_BASE[port + 1];
+      break;
+  case GC:
+      VGA_BASE[port] = index;
+      read = VGA_BASE[port + 1];
+      break;
+  case CRTC:
+      VGA_BASE[port] = index;
+      read = VGA_BASE[port + 1];
+      break;
+  case PD:
+      read = VGA_BASE[PD];
+      break;
+  default:
+      read = 0xff;
+      break;
+  }
+  discard= VGA_BASE[INPUT_STATUS_REGISTER];
+  return read;
+}
+
+void writeport(natl port, natb index, natb val) 
+{
+  switch (port) {
+      case AC:
+          //reset AC to index mode
+          discard = VGA_BASE[INPUT_STATUS_REGISTER];
+          //attribute register riceve prima l'indirizzo del registro da indicizzare 
+          //e poi il dato da trasferire
+          VGA_BASE[AC] = index;
+          VGA_BASE[AC] = val;
+          break;
+      case MISC:
+          //miscellaneous output register
+          //essendo un external register non ha bisogno di essere indicizzato
+          VGA_BASE[MISC] = val;
+          break;
+      // SEQ, GC e CRTC accedono ai registri interni con lo stesso formato
+      case SEQ:
+          //sequencer register riceve prima l'indice nell'address register
+          //poi scrive il dato nel data register (1 byte successivo)
+      case GC:
+          //graphics register riceve prima l'indice nell'address register
+          //poi scrive il dato nel data register (1 byte successivo)
+      case CRTC:
+          //cathode ray tube controller register riceve prima l'indice nell'address register
+          //poi scrive il dato nel data register (1 byte successivo)
+          VGA_BASE[port] = index;
+          VGA_BASE[port + 1] = val;
+          break;
+      case PC:
+          //dac register
+          //poiché prima bisogna scrivere l'indice di partenza e poi terne di colori RGB
+          //nel data register, si evita di fare tutto nella stessa write
+          VGA_BASE[port] = index;
+          break;
+      case PD:
+          VGA_BASE[port] = val;
+          break;
+  }
+}
+  
 void init_AC(){
   //PAS bit reset to load color values into internal palette registers
   //carica 6 bit rgbRGB nel palette register indicizzato

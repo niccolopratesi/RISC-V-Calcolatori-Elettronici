@@ -293,12 +293,12 @@ bool crea_finestra_FM(paddr root_tab)
 	}
 
 	//Mappa PCIe-ECAM
-	if(map(root_tab, PCI_ECAM, PCI_ECAM+PCI_ECAM_SIZE, BIT_X | BIT_W | BIT_R | BIT_G, identity_map,2) != (PCI_ECAM+PCI_ECAM_SIZE)){
+	if(map(root_tab, PCI_ECAM, PCI_ECAM+PCI_ECAM_SIZE, BIT_W | BIT_R | BIT_G, identity_map,2) != (PCI_ECAM+PCI_ECAM_SIZE)){
 		return false;
 	}
 
 	//Mappa PCIe-MMIO
-	if(map(root_tab, PCI_MMIO, PCI_MMIO+PCI_MMIO_SIZE, BIT_X | BIT_W | BIT_R | BIT_G, identity_map,2) != (PCI_MMIO+PCI_MMIO_SIZE)){
+	if(map(root_tab, PCI_MMIO, PCI_MMIO+PCI_MMIO_SIZE, BIT_W | BIT_R | BIT_G, identity_map,2) != (PCI_MMIO+PCI_MMIO_SIZE)){
 		return false;
 	}
 
