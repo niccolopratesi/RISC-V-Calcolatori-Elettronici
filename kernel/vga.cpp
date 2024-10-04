@@ -96,15 +96,15 @@ extern "C" void vga_init() {
   // for(int i = 0; i<200; i++){
   //   for(int j = 0; j<320; j++){
   //     if(((i >= 10 && i < 15) || (i > 85 && i <= 90)|| (i >= 110 && i < 115) || (i > 185 && i <= 190)) && (j > 129 && j < 190)){
-  //       vga_buf[i*320+j] = 0xfa;
-  //     }else if((i > 147 && i < 153) && (j > 130 && j < 170)){
-  //       vga_buf[i*320+j] = 0xfa;
-  //     }else if(((i>=10 && i<=90) || (i>=110 && i<=190)) && (j > 127 && j < 133)){
-  //       vga_buf[i*320+j] = 0xfa;
-  //     }else if(j > 99 && j < 220){
   //       vga_buf[i*320+j] = 0xfb;
+  //     }else if((i > 147 && i < 153) && (j > 130 && j < 170)){
+  //       vga_buf[i*320+j] = 0xfb;
+  //     }else if(((i>=10 && i<=90) || (i>=110 && i<=190)) && (j > 127 && j < 133)){
+  //       vga_buf[i*320+j] = 0xfb;
+  //     }else if(j > 99 && j < 220){
+  //       vga_buf[i*320+j] = 0xfc;
   //     }else{
-  //       vga_buf[i*320+j] = 0xfa;
+  //       vga_buf[i*320+j] = 0xfb;
   //     }
   //   }
   // }
@@ -113,7 +113,7 @@ extern "C" void vga_init() {
   //   for(int j = 0; j < 320; j++){
   //     if(((j>88 && j<=99) || (j>=220 && j<231)) && i!=0 && i%40==0){
   //       for(int k = -10; k < 11; k++){
-  //         vga_buf[(i+k)*320+j] = 0xf9;
+  //         vga_buf[(i+k)*320+j] = 0xfa;
   //       }
   //     }
   //   }
@@ -124,9 +124,9 @@ extern "C" void vga_init() {
   //   for(int j=0; j < 320;j++){
   //     if(j<5 || j>314 || j== 159 || j==160){
 
-  //       p[i*320 + j] = 0xfd;
-  //     }else{
   //       p[i*320 + j] = 0xfe;
+  //     }else{
+  //       p[i*320 + j] = 0xff;
   //     }
   //   }
   // }
@@ -468,6 +468,11 @@ void init_graphicmode_320x200(){
 void load_palette(){
   // Set default VGA palette
   writeport(PC, 0xff, 0x00);
+
+  // il primo colore va caricato 2 volte
+  writeport(PD, 0xff, (std_palette[0] & 0xff0000) >> 16);
+  writeport(PD, 0xff, (std_palette[0] & 0x00ff00) >> 8);
+  writeport(PD, 0xff, (std_palette[0] & 0x0000ff));
 
   for (int i = 0; i < 256; i++) {
     writeport(PD, 0xff, (std_palette[i] & 0xff0000) >> 16);

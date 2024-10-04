@@ -337,7 +337,7 @@ extern "C" void main(natq sem_io)
     } else {
       flog(LOG_INFO, "\n === PROVIAMO A USARE LA CONSOLE ===");
 
-      flog(LOG_INFO, "inizializzazione della cosnole (iniconsole)");
+      flog(LOG_INFO, "inizializzazione della console (iniconsole)");
       c_iniconsole(0xf0);
 
       flog(LOG_INFO, "scrivo sulla console (writeconsole)");

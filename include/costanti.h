@@ -1,9 +1,9 @@
 #ifndef _COSTANTI_H_
 #define _COSTANTI_H_
 // ( varie dimensioni
-#define KiB			1024UL
-#define MiB			(1024*KiB)
-#define GiB			(1024*MiB)
+#define KiB			    1024UL
+#define MiB			    (1024*KiB)
+#define GiB			    (1024*MiB)
 #define DIM_PAGINA		4096UL
 #define DIM_BLOCK		512UL
 // )
@@ -31,41 +31,36 @@
 #define MAX_IRQ         32
 
 // codice interruzione tastiera
-#define KBD_IRQ     1
+#define KBD_IRQ         1
 
 //indirizzo inizio VIRT_TEST
-#define VIRT_TEST       0x100000L
+#define VIRT_TEST       0x100000UL
 //indirizzo inizio PLIC
-#define PLIC            0x0c000000L
+#define PLIC            0x0c000000UL
 //dimensione spazio riservato al PLIC
-#define PLIC_SIZE       0x400000L
+#define PLIC_SIZE       0x400000UL
 //indirizzo inizio VIRTIO0
-#define VIRTIO0         0x10001000L
+#define VIRTIO0         0x10001000UL
 //indirizzo inizio PCIe-ECAM
-#define PCI_ECAM        0x30000000L
+#define PCI_ECAM        0x30000000UL
 //dimensione spazio PCIe-ECAM
-#define PCI_ECAM_SIZE   0x10000000L
+#define PCI_ECAM_SIZE   0x10000000UL
 //indirizzo inizio PCIe-MMIO
-#define PCI_MMIO        0x40000000L
+#define PCI_MMIO        0x40000000UL
 //dimensione spazio PCIe-MMIO
-#define PCI_MMIO_SIZE   0x40000000L
+#define PCI_MMIO_SIZE   0x40000000UL
 
 //indirizzo VGA buffer
-#define VGA_FRAMEBUFFER 0x50000000L
+#define VGA_FRAMEBUFFER 0x50000000UL
 //indirizzo area MMIO VGA ports
-#define VGA_MMIO_PORTS  0x40000000L
+#define VGA_MMIO_PORTS  0x40000000UL
 
-
+// indirizzo di partenza memoria fisica
+#define START_DRAM      0x80000000UL
 
 // indirizzo dal quale e' montato il kernel
-#define KERNBASE           0x80000000UL
-// indirizzo in cui è caricato il descrittore del modulo utente
-// caricato di default a metà della memoria fisica
-#ifdef UBUNTU
-    #define USER_MOD_START 0x84000000UL
-#else
-    #define USER_MOD_START 0x83fff000UL
-#endif
+#define KERNBASE        0x80000000UL
+
 // indirizzo da cui sono caricati i descrittori del modulo io e utente
 // caricato di default a 0x84000000L o 0x83fff000L(ubuntu)
 #define MOD_START       0x83fff000UL
@@ -93,14 +88,14 @@
 #define TIPO_ACC		0x36	// access
 //   )
 //   ( fornite dal modulo I/O
-#define IO_TIPO_HDR		  0x40	// readhd_n
-#define IO_TIPO_HDW		  0x41	// writehd_n
+#define IO_TIPO_HDR		0x40	// readhd_n
+#define IO_TIPO_HDW		0x41	// writehd_n
 #define IO_TIPO_DMAHDR	0x42	// dmareadhd_n
 #define IO_TIPO_DMAHDW	0x43	// dmawritehd_n
-#define IO_TIPO_RCON	  0x44	// readconsole
-#define IO_TIPO_WCON	  0x45	// writeconsole
-#define IO_TIPO_INIC	  0x46	// iniconsole
-#define IO_TIPO_GMI		  0x47	// getiomeminfo
+#define IO_TIPO_RCON	0x44	// readconsole
+#define IO_TIPO_WCON	0x45	// writeconsole
+#define IO_TIPO_INIC	0x46	// iniconsole
+#define IO_TIPO_GMI		0x47	// getiomeminfo
 //   )
 // )
 
@@ -141,22 +136,22 @@
 
 // MACRO per gestione interruzioni
 // Machine Status Register
-#define MSTATUS_MPP_MASK (3L << 11) 
-#define MSTATUS_MPP_M    (3L << 11)
-#define MSTATUS_MPP_S    (1L << 11)
-#define MSTATUS_MPP_U    (0L << 11)
-#define MSTATUS_MIE      (1L << 3)   
+#define MSTATUS_MPP_MASK    (3L << 11) 
+#define MSTATUS_MPP_M       (3L << 11)
+#define MSTATUS_MPP_S       (1L << 11)
+#define MSTATUS_MPP_U       (0L << 11)
+#define MSTATUS_MIE         (1L << 3)   
 
 // Supervisor Status Register
-#define SSTATUS_SPP      (1L << 8)   
-#define SSTATUS_SPIE     (1L << 5)   
-#define SSTATUS_UPIE     (1L << 4)   
-#define SSTATUS_SIE      (1L << 1)  
-#define SSTATUS_UIE      (1L << 0) 
+#define SSTATUS_SPP         (1L << 8)   
+#define SSTATUS_SPIE        (1L << 5)   
+#define SSTATUS_UPIE        (1L << 4)   
+#define SSTATUS_SIE         (1L << 1)  
+#define SSTATUS_UIE         (1L << 0) 
 
 // Costanti per il reset
-#define FINISHER_FAIL    0x3333
-#define FINISHER_PASS    0x5555
-#define FINISHER_RESET   0x7777
+#define FINISHER_FAIL       0x3333
+#define FINISHER_PASS       0x5555
+#define FINISHER_RESET      0x7777
 
 #endif
