@@ -225,19 +225,13 @@ extern "C" void c_iniconsole(natb cc)
 bool kbd_init()
 {
     // inizializzazione delle strutture dati della tastiera
-    kbd::eventq = (virtq *) trasforma(alloca(sizeof(*kbd::eventq)));
-    kbd::statusq = (virtq *) trasforma(alloca(sizeof(*kbd::statusq)));
-    kbd::buf = (virtio_input_event *) trasforma(alloca(sizeof(*kbd::buf) * kbd::QUEUE_SIZE));
+    kbd::eventq = (virtq *) alloca(sizeof(*kbd::eventq));
+    kbd::statusq = (virtq *) alloca(sizeof(*kbd::statusq));
+    kbd::buf = (virtio_input_event *) alloca(sizeof(*kbd::buf) * kbd::QUEUE_SIZE);
     create_virtq(*kbd::eventq, kbd::QUEUE_SIZE, 0);
     create_virtq(*kbd::statusq, kbd::QUEUE_SIZE, 0);
-    kbd::eventq->desc = (virtq_desc *) trasforma(kbd::eventq->desc);
-    kbd::eventq->avail = (virtq_avail *) trasforma(kbd::eventq->avail);
-    kbd::eventq->used = (virtq_used *) trasforma(kbd::eventq->used);
-    kbd::statusq->desc = (virtq_desc *) trasforma(kbd::statusq->desc);
-    kbd::statusq->avail = (virtq_avail *) trasforma(kbd::statusq->avail);
-    kbd::statusq->used = (virtq_used *) trasforma(kbd::statusq->used);
     // le interruzioni sono disabilitate di default dalla init()
-    if (!kbd::init()) {
+    if (!kbd::init(trasforma)) {
       flog(LOG_ERR, "kbd: impossibile configurare la tastiera");
       return false;
     }
@@ -317,24 +311,24 @@ extern "C" void panic(const char* msg)
  */
 extern "C" void main(natq sem_io)
 {
-    //inizializzazione semaforo mutua esclusione per heap
+    // inizializzazione semaforo mutua esclusione per heap
     ioheap_mutex = sem_ini(1);
     if (ioheap_mutex == 0xFFFFFFFF) {
         panic("Impossibile creare semaforo ioheap_mutex");
     }
 
     natb* end_ = allinea(end,DIM_PAGINA);
-    //inizializzazione heap modulo I/O
+    // inizializzazione heap modulo I/O
     heap_init(allinea_ptr(end_, DIM_PAGINA), DIM_IO_HEAP);
 	  flog(LOG_INFO, "Heap del modulo I/O: %lx [%p, %p)", DIM_IO_HEAP,
 			end_, end_ + DIM_IO_HEAP);
 
-    //inizializzazione periferiche
+    // inizializzazione periferiche
     flog(LOG_INFO,"Inizializzo la console (kbd + video)");
     if (!console_init()) {
         panic("Inizializzazione console fallita");
     }
-    
+
     flog(LOG_INFO,"Inizializzazione modulo I/O completata");
 
     sem_signal(sem_io);

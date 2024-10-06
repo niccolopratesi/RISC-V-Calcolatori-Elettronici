@@ -19,6 +19,8 @@ namespace kbd {
 	extern char tabmin[MAX_CODE];
 	extern char tabmai[MAX_CODE];
 
+  extern paddr (*get_real_addr)(void *ff);
+
   extern paddr eventq_notify_addr;
   extern MSIX_capability *msix_cap;
 
@@ -27,7 +29,7 @@ namespace kbd {
   extern virtq *eventq;
   extern virtq *statusq;
 
-  bool init();
+  bool init(paddr (*func)(void *ff));
 }
 
 // evdev type

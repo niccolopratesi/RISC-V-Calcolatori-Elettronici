@@ -42,14 +42,14 @@ err_desc:
 }
 
 bool enable_virtq(virtio_pci_common_cfg &common_cfg, natw queue_select, natw queue_size,
-                  natw queue_msix_vector, virtq queue)
+                  natw queue_msix_vector, virtq queue, paddr (*get_real_addr)(void *ff))
 {
   common_cfg.queue_select      = queue_select;
   common_cfg.queue_size        = queue_size;
   common_cfg.queue_msix_vector = queue_msix_vector;
-  common_cfg.queue_desc        = (natq) queue.desc;
-  common_cfg.queue_driver      = (natq) queue.avail;
-  common_cfg.queue_device      = (natq) queue.used;
+  common_cfg.queue_desc        = get_real_addr(queue.desc);
+  common_cfg.queue_driver      = get_real_addr(queue.avail);
+  common_cfg.queue_device      = get_real_addr(queue.used);
 
   if (common_cfg.queue_msix_vector == VIRTIO_MSI_NO_VECTOR) {
     return false;
@@ -58,9 +58,10 @@ bool enable_virtq(virtio_pci_common_cfg &common_cfg, natw queue_select, natw que
   return true;
 }
 
-void add_buf_desc(virtq &queue, natw index, natq addr, natl len, natw flags, natw next)
+void add_buf_desc(virtq &queue, natw index, natq addr, natl len, natw flags, natw next,
+                  paddr (*get_real_addr)(void *ff))
 {
-  queue.desc[index].addr  = addr;
+  queue.desc[index].addr  = get_real_addr((void *) addr);
   queue.desc[index].len   = len;
   queue.desc[index].flags = flags;
   queue.desc[index].next  = next;

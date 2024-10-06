@@ -117,8 +117,9 @@ struct virtio_pci_notify_cap {
 
 bool create_virtq(virtq &queue, natw queue_size, natw avail_flags);
 bool enable_virtq(virtio_pci_common_cfg &common_cfg, natw queue_select, natw queue_size,
-                  natw queue_msix_vector, virtq queue);
-void add_buf_desc(virtq &queue, natw index, natq addr, natl len, natw flags, natw next);
+                  natw queue_msix_vector, virtq queue, paddr (*get_real_addr)(void *ff));
+void add_buf_desc(virtq &queue, natw index, natq addr, natl len, natw flags, natw next,
+                  paddr (*get_real_addr)(void *ff));
 void memory_barrier();
 
 #endif /* VIRTIO_H */

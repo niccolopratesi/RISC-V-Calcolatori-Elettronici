@@ -4,8 +4,10 @@
 
 namespace kbd {
   
-  bool init()
+  bool init(paddr (*func)(void *ff))
   {
+    get_real_addr = func;
+
     PCI_config *conf = (PCI_config *) PCI;
     virtio_pci_common_cfg *comm_cfg = (virtio_pci_common_cfg *) MMIO;
     natl notify_off_multiplier;
@@ -87,14 +89,14 @@ namespace kbd {
 
     // "7.4. Population of virtqueues."
     // coda 0
-    if (!enable_virtq(*comm_cfg, 0, QUEUE_SIZE, 1, *eventq)) {
+    if (!enable_virtq(*comm_cfg, 0, QUEUE_SIZE, 1, *eventq, get_real_addr)) {
       goto error_set_failed;
     }
     for (int i = 0; i < QUEUE_SIZE; i++) {
-      add_buf_desc(*eventq, i, (natq) &buf[i], sizeof(buf[i]), VIRTQ_DESC_F_WRITE, 0);
+      add_buf_desc(*eventq, i, (natq) &buf[i], sizeof(buf[i]), VIRTQ_DESC_F_WRITE, 0, get_real_addr);
     }
     // coda 1
-    if (!enable_virtq(*comm_cfg, 1, QUEUE_SIZE, 1, *statusq)) {
+    if (!enable_virtq(*comm_cfg, 1, QUEUE_SIZE, 1, *statusq, get_real_addr)) {
       goto error_set_failed;
     }
 

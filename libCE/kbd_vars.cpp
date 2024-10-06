@@ -2,6 +2,7 @@
 #include "kbd.h"
 
 namespace kbd {
+
   bool shift = false;
   natw tab[MAX_CODE] = {
     KEY_1, KEY_2, KEY_3, KEY_4, KEY_5, KEY_6, KEY_7, KEY_8, KEY_9, KEY_0, KEY_MINUS, KEY_EQUAL,
@@ -22,6 +23,8 @@ namespace kbd {
     'z', 'x', 'c', 'v', 'b', 'n', 'm', ' ', '\n', '\b', 0x1b
   };
 
+  paddr (*get_real_addr)(void *ff);
+
   paddr eventq_notify_addr;
   MSIX_capability *msix_cap = nullptr;
 
@@ -29,4 +32,5 @@ namespace kbd {
   natw next_idx_read = 0;
   virtq *eventq = nullptr;
   virtq *statusq = nullptr;
+
 }
