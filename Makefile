@@ -5,6 +5,8 @@ IO=io
 ODIR=objs
 B=build
 
+compile: $B/kernel $B/user.strip $B/io.strip
+
 _OBJS = $(patsubst $(K)/%.c,%.o,$(wildcard $(K)/*.c)) $(patsubst $(K)/%.s,%.o,$(wildcard $(K)/*.s)) $(patsubst $(K)/%.cpp,%.o,$(wildcard $(K)/*.cpp))
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
@@ -166,8 +168,6 @@ $(B)/libce.a: $(LIBCE_OBJECTS) $(HEADERS)
 
 $B/moduli.strip: $B/io.strip $B/user.strip
 	(printf "%d\n%d\n" $$(stat -c%s $B/io.strip) $$(stat -c%s $B/user.strip); cat $B/io.strip $B/user.strip) > $@
-
-compile: $B/kernel $B/user.strip $B/io.strip
 
 run: build $B/kernel $B/moduli.strip
 	$(RUN) -kernel $B/kernel -initrd $B/moduli.strip

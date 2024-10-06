@@ -64,7 +64,7 @@ void init_frame()
 	// primo frame di M2
 	paddr fine_M1 = start_M2;
 	// numero di frame in M1 e indice di f in vdf
-	N_M1 = (fine_M1-0x80000000) / DIM_PAGINA;
+	N_M1 = (fine_M1-START_DRAM) / DIM_PAGINA;
 	// numero di frame in M2
 	N_M2 = N_FRAME - N_M1;
 
@@ -107,13 +107,13 @@ paddr alloca_frame(){
 	primo_frame_libero = vdf[primo_frame_libero].prossimo_libero;
 	vdf[j].prossimo_libero = 0;
 	num_frame_liberi--;
-	return j * DIM_PAGINA + 0x80000000;
+	return j * DIM_PAGINA + START_DRAM;
 }
 
 // rende di nuovo libero il frame descritto da df
 void rilascia_frame(paddr f){
 
-	natq j = (f-0x80000000) / DIM_PAGINA;
+	natq j = (f-START_DRAM) / DIM_PAGINA;
 	if (j < N_M1) {
 		fpanic("tentativo di rilasciare il frame %p di M1", f);
 	}
@@ -126,17 +126,17 @@ void rilascia_frame(paddr f){
 // tabelle)
 void inc_ref(paddr f)
 {
-	vdf[(f-0x80000000L) / DIM_PAGINA].nvalide++;
+	vdf[(f-START_DRAM) / DIM_PAGINA].nvalide++;
 }
 
 void dec_ref(paddr f)
 {
-	vdf[(f-0x80000000L) / DIM_PAGINA].nvalide--;
+	vdf[(f-START_DRAM) / DIM_PAGINA].nvalide--;
 }
 
 natl get_ref(paddr f)
 {
-	return vdf[(f-0x80000000L) / DIM_PAGINA].nvalide;
+	return vdf[(f-START_DRAM) / DIM_PAGINA].nvalide;
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -149,7 +149,7 @@ paddr alloca_tab()
 	paddr f = alloca_frame();
 	if (f) {
 		memset(voidptr_cast(f), 0, DIM_PAGINA);
-		vdf[(f-0x80000000L)/ DIM_PAGINA].nvalide = 0;
+		vdf[(f-START_DRAM)/ DIM_PAGINA].nvalide = 0;
 	}
 	return f;
 }
@@ -293,24 +293,14 @@ bool crea_finestra_FM(paddr root_tab)
 	}
 
 	//Mappa PCIe-ECAM
-	if(map(root_tab, PCI_ECAM, PCI_ECAM+PCI_ECAM_SIZE, BIT_X | BIT_W | BIT_R | BIT_G, identity_map,2) != (PCI_ECAM+PCI_ECAM_SIZE)){
+	if(map(root_tab, PCI_ECAM, PCI_ECAM+PCI_ECAM_SIZE, BIT_W | BIT_R | BIT_G, identity_map,2) != (PCI_ECAM+PCI_ECAM_SIZE)){
 		return false;
 	}
 
 	//Mappa PCIe-MMIO
-	if(map(root_tab, PCI_MMIO, PCI_MMIO+PCI_MMIO_SIZE, BIT_X | BIT_W | BIT_R | BIT_G, identity_map,2) != (PCI_MMIO+PCI_MMIO_SIZE)){
+	if(map(root_tab, PCI_MMIO, PCI_MMIO+PCI_MMIO_SIZE, BIT_W | BIT_R | BIT_G, identity_map,2) != (PCI_MMIO+PCI_MMIO_SIZE)){
 		return false;
 	}
-
-	// Mappa VGA
-	/* #define VGA_BASE 0x3000000L
-	#define FRAMEBUFFER_VGA (0x50000000 | (0xb8000 - 0xa0000))
-	if(map(root_tab, VGA_BASE, VGA_BASE+DIM_PAGINA, BIT_X | BIT_W | BIT_R | BIT_G, identity_map) != (VGA_BASE+DIM_PAGINA)){
-		return false;
-	}
-	if(map(root_tab, FRAMEBUFFER_VGA, FRAMEBUFFER_VGA+DIM_PAGINA, BIT_X | BIT_W | BIT_R | BIT_G, identity_map) != (FRAMEBUFFER_VGA+DIM_PAGINA)){
-		return false;
-	} */
 
 	// mappiamo il kernel con tabelle di livello 2
 	if (map(root_tab, KERNBASE, KERNBASE+MEM_TOT, BIT_X | BIT_W | BIT_R | BIT_G, identity_map, 2) != KERNBASE+MEM_TOT)
