@@ -90,6 +90,9 @@ namespace kbd {
     if (!enable_virtq(*comm_cfg, 0, QUEUE_SIZE, 1, *eventq)) {
       goto error_set_failed;
     }
+    for (int i = 0; i < QUEUE_SIZE; i++) {
+      add_buf_desc(*eventq, i, (natq) &buf[i], sizeof(buf[i]), VIRTQ_DESC_F_WRITE, 0);
+    }
     // coda 1
     if (!enable_virtq(*comm_cfg, 1, QUEUE_SIZE, 1, *statusq)) {
       goto error_set_failed;
