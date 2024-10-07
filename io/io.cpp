@@ -230,9 +230,6 @@ bool kbd_init()
       return false;
     }
 
-    // prepariamo la virtqueue per ricevere i dati
-    kbd::add_max_buf();
-
     if (activate_pe(estern_kbd, 0, MAX_EXT_PRIO - KBD_IRQ, LIV_SISTEMA, KBD_IRQ) == 0xFFFFFFFF) {
         flog(LOG_ERR, "kbd: imposssibile creare estern_kbd");
         return false;

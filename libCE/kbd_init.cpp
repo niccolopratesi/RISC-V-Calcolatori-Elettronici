@@ -111,6 +111,9 @@ namespace kbd {
     if (comm_cfg->device_status & DEVICE_NEEDS_RESET_BIT) {
       goto error_set_failed;
     }
+
+    // prepariamo la eventq a ricevere i dati
+    add_max_buf();
     
     return true;
 
