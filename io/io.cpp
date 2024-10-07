@@ -224,12 +224,6 @@ extern "C" void c_iniconsole(natb cc)
  */
 bool kbd_init()
 {
-    // inizializzazione delle strutture dati della tastiera
-    kbd::eventq = (virtq *) alloca(sizeof(*kbd::eventq));
-    kbd::statusq = (virtq *) alloca(sizeof(*kbd::statusq));
-    kbd::buf = (virtio_input_event *) alloca(sizeof(*kbd::buf) * kbd::QUEUE_SIZE);
-    create_virtq(*kbd::eventq, kbd::QUEUE_SIZE, 0);
-    create_virtq(*kbd::statusq, kbd::QUEUE_SIZE, 0);
     // le interruzioni sono disabilitate di default dalla init()
     if (!kbd::init(trasforma)) {
       flog(LOG_ERR, "kbd: impossibile configurare la tastiera");
@@ -252,7 +246,7 @@ bool kbd_init()
  */
 bool vid_init()
 {
-    // vid::clear_screen(vid::attr);
+    vid::clear_screen(vid::attr);
     flog(LOG_INFO, "vid: video inizializzato");
     return true;
 }

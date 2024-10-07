@@ -24,10 +24,10 @@ namespace kbd {
   extern paddr eventq_notify_addr;
   extern MSIX_capability *msix_cap;
 
-  extern virtio_input_event *buf;
+  extern virtio_input_event buf[QUEUE_SIZE];
   extern natw next_idx_read;
-  extern virtq *eventq;
-  extern virtq *statusq;
+  extern virtq eventq;
+  extern virtq statusq;
 
   bool init(paddr (*func)(void *ff));
 }

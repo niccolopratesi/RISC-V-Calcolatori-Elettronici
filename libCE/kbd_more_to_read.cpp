@@ -5,7 +5,7 @@ namespace kbd {
 
   bool more_to_read()
   {
-    return next_idx_read != eventq->used->idx;
+    return next_idx_read != eventq.used->idx;
   }
 
 }
